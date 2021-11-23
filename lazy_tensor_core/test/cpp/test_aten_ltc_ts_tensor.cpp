@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include "c10/core/Device.h"
 #include "cpp_test_util.h"
 #include "lazy_tensor_core/csrc/aten_ltc_bridge.h"
 #include "lazy_tensor_core/csrc/helpers.h"
@@ -17,8 +18,12 @@ namespace {
 
 class AtenLtcTsTensorTest : public AtenLtcTsTensorTestBase {};
 
-bool IsCuda() {
+static inline bool IsCuda() {
   return torch::lazy::getBackend()->EagerFallbackDeviceType() == at::kCUDA;
+}
+
+static inline at::DeviceType DefaultDevice() {
+  return torch::lazy::getBackend()->EagerFallbackDeviceType();
 }
 
 torch::lazy::BackendRegistrar g_registrar(compiler::GetTSBackendImpl());
@@ -27,7 +32,7 @@ torch::lazy::BackendRegistrar g_registrar(compiler::GetTSBackendImpl());
 
 TEST_F(AtenLtcTsTensorTest, TestScalarTensor) {
   torch::Tensor scalar_tensor =
-      torch::scalar_tensor(1., torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(1., torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_scalar_tensor = torch::scalar_tensor(
         1., torch::TensorOptions(torch::kFloat).device(torch::kLazy));
@@ -37,7 +42,7 @@ TEST_F(AtenLtcTsTensorTest, TestScalarTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestClone) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b = xla_a.clone();
     AllClose(a, xla_b);
@@ -48,7 +53,7 @@ TEST_F(AtenLtcTsTensorTest, TestClone) {
 
 TEST_F(AtenLtcTsTensorTest, TestTo) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     AllClose(a, xla_a);
   });
@@ -56,7 +61,7 @@ TEST_F(AtenLtcTsTensorTest, TestTo) {
 
 TEST_F(AtenLtcTsTensorTest, TestIsFloatingPoint) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     bool is_float = torch::is_floating_point(a);
     bool xla_is_float = torch::is_floating_point(xla_a);
@@ -66,7 +71,7 @@ TEST_F(AtenLtcTsTensorTest, TestIsFloatingPoint) {
 
 TEST_F(AtenLtcTsTensorTest, TestIsSigned) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     bool is_signed = torch::is_signed(a);
     bool xla_is_signed = torch::is_signed(xla_a);
@@ -76,7 +81,7 @@ TEST_F(AtenLtcTsTensorTest, TestIsSigned) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastByte) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Byte(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -87,7 +92,7 @@ TEST_F(AtenLtcTsTensorTest, TestCastByte) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastChar) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Char(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -98,7 +103,7 @@ TEST_F(AtenLtcTsTensorTest, TestCastChar) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastShort) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Short(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -109,7 +114,7 @@ TEST_F(AtenLtcTsTensorTest, TestCastShort) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastInt) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Int(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -120,7 +125,7 @@ TEST_F(AtenLtcTsTensorTest, TestCastInt) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastLong) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Long(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -131,7 +136,7 @@ TEST_F(AtenLtcTsTensorTest, TestCastLong) {
 
 TEST_F(AtenLtcTsTensorTest, TestCastFloat) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::_cast_Float(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -165,8 +170,8 @@ TEST_F(AtenLtcTsTensorTest, TestLogicalTypeWithInterop) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAdd) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::add(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -177,8 +182,8 @@ TEST_F(AtenLtcTsTensorTest, TestAdd) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddHalf) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf).device(DefaultDevice()));
   torch::Tensor c = torch::add(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -189,8 +194,8 @@ TEST_F(AtenLtcTsTensorTest, TestAddHalf) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddMixedPrecision) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kHalf).device(DefaultDevice()));
   torch::Tensor c = torch::add(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -202,9 +207,9 @@ TEST_F(AtenLtcTsTensorTest, TestAddMixedPrecision) {
 
 TEST_F(AtenLtcTsTensorTest, TestAddInPlace) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
-    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_b = CopyToDevice(b, device);
     torch::Tensor c = a.add_(b);
     torch::Tensor xla_c = xla_a.add_(xla_b);
@@ -214,7 +219,7 @@ TEST_F(AtenLtcTsTensorTest, TestAddInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddScalar) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar b(1);
   torch::Tensor c = torch::add(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -227,7 +232,7 @@ TEST_F(AtenLtcTsTensorTest, TestAddScalar) {
 TEST_F(AtenLtcTsTensorTest, TestAddScalarInPlace) {
   torch::Scalar b(1);
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor c = a.add_(b);
     torch::Tensor xla_c = xla_a.add_(b);
@@ -237,8 +242,8 @@ TEST_F(AtenLtcTsTensorTest, TestAddScalarInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddZeroSizeDim) {
-  torch::Tensor a = torch::rand({0, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({1, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({0, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({1, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::add(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -249,8 +254,8 @@ TEST_F(AtenLtcTsTensorTest, TestAddZeroSizeDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSub) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::sub(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -262,9 +267,9 @@ TEST_F(AtenLtcTsTensorTest, TestSub) {
 
 TEST_F(AtenLtcTsTensorTest, TestSubInPlace) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
-    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_b = CopyToDevice(b, device);
     torch::Tensor c = a.sub_(b);
     torch::Tensor xla_c = xla_a.sub_(xla_b);
@@ -274,7 +279,7 @@ TEST_F(AtenLtcTsTensorTest, TestSubInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSubScalar) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar b(1);
   torch::Tensor c = torch::sub(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -287,7 +292,7 @@ TEST_F(AtenLtcTsTensorTest, TestSubScalar) {
 TEST_F(AtenLtcTsTensorTest, TestSubScalarInPlace) {
   torch::Scalar b(1);
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor c = a.sub_(b);
     torch::Tensor xla_c = xla_a.sub_(b);
@@ -297,8 +302,8 @@ TEST_F(AtenLtcTsTensorTest, TestSubScalarInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMul) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::mul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -310,9 +315,9 @@ TEST_F(AtenLtcTsTensorTest, TestMul) {
 
 TEST_F(AtenLtcTsTensorTest, TestMulInPlace) {
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
-    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_b = CopyToDevice(b, device);
     torch::Tensor c = a.mul_(b);
     torch::Tensor xla_c = xla_a.mul_(xla_b);
@@ -322,7 +327,7 @@ TEST_F(AtenLtcTsTensorTest, TestMulInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMulScalar) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar b(3);
   torch::Tensor c = torch::mul(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -335,7 +340,7 @@ TEST_F(AtenLtcTsTensorTest, TestMulScalar) {
 TEST_F(AtenLtcTsTensorTest, TestMulScalarInPlace) {
   torch::Scalar b(3);
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor c = a.mul_(b);
     torch::Tensor xla_c = xla_a.mul_(b);
@@ -464,8 +469,8 @@ TEST_F(AtenLtcTsTensorTest, TestDivScalar) {
         torch::kLong}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(1, 100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(1, 100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool is_float : {true, false}) {
       torch::Scalar b = is_float ? torch::Scalar(3.0) : torch::Scalar(3);
       torch::Tensor c = torch::div(a, b);
@@ -482,8 +487,8 @@ TEST_F(AtenLtcTsTensorTest, TestDivScalarInPlace) {
   for (torch::ScalarType scalar_type : {torch::kFloat}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(1, 100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(1, 100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool is_float : {true, false}) {
       torch::Scalar b = is_float ? torch::Scalar(3.0) : torch::Scalar(3);
       ForEachDevice([&](const torch::Device& device) {
@@ -498,9 +503,9 @@ TEST_F(AtenLtcTsTensorTest, TestDivScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestDivOut) {
   for (torch::ScalarType scalar_type : {torch::kFloat, torch::kDouble}) {
-    torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(scalar_type));
-    torch::Tensor b = torch::rand({3, 4}, torch::TensorOptions(scalar_type));
-    torch::Tensor c = torch::empty({3, 4}, torch::TensorOptions(scalar_type));
+    torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
+    torch::Tensor b = torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
+    torch::Tensor c = torch::empty({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::div_out(c, a, b);
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a = CopyToDevice(a, device);
@@ -514,7 +519,7 @@ TEST_F(AtenLtcTsTensorTest, TestDivOut) {
 
 TEST_F(AtenLtcTsTensorTest, TestRsubScalar) {
   torch::Tensor input =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar other(1.5);
   torch::Scalar alpha(2.5);
   torch::Tensor result = torch::rsub(input, other, alpha);
@@ -526,8 +531,8 @@ TEST_F(AtenLtcTsTensorTest, TestRsubScalar) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNe) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::ne(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -538,7 +543,7 @@ TEST_F(AtenLtcTsTensorTest, TestNe) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNeInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor a_copy = a.clone();
   torch::Tensor b = a.clone();
   b[0] += 1;
@@ -552,7 +557,7 @@ TEST_F(AtenLtcTsTensorTest, TestNeInplace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEq) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   torch::Tensor c = torch::eq(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -564,7 +569,7 @@ TEST_F(AtenLtcTsTensorTest, TestEq) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEqInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   b[0] += 1;
   torch::Tensor a_copy = a.clone();
@@ -578,7 +583,7 @@ TEST_F(AtenLtcTsTensorTest, TestEqInplace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGe) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   torch::Tensor c = torch::ge(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -590,7 +595,7 @@ TEST_F(AtenLtcTsTensorTest, TestGe) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGeInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   b[0] += 1;
   b[1] -= 1;
@@ -605,7 +610,7 @@ TEST_F(AtenLtcTsTensorTest, TestGeInplace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLe) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   torch::Tensor c = torch::le(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -617,7 +622,7 @@ TEST_F(AtenLtcTsTensorTest, TestLe) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLeInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   b[0] += 1;
   b[1] -= 1;
@@ -632,7 +637,7 @@ TEST_F(AtenLtcTsTensorTest, TestLeInplace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGt) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::add(a.clone(), torch::ones_like(a));
   torch::Tensor c = torch::gt(b, a);
   ForEachDevice([&](const torch::Device& device) {
@@ -644,7 +649,7 @@ TEST_F(AtenLtcTsTensorTest, TestGt) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGtInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   b[0] += 1;
   b[1] -= 1;
@@ -659,7 +664,7 @@ TEST_F(AtenLtcTsTensorTest, TestGtInplace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLt) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::add(a.clone(), torch::ones_like(a));
   torch::Tensor c = torch::lt(a, b);
   ForEachDevice([&](const torch::Device& device) {
@@ -671,7 +676,7 @@ TEST_F(AtenLtcTsTensorTest, TestLt) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLtInplace) {
-  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.clone();
   b[0] += 1;
   b[1] -= 1;
@@ -720,7 +725,7 @@ TEST_F(AtenLtcTsTensorTest, TestGeScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestGeScalarInplace) {
   torch::Tensor input =
-      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat));
+      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar other(float(0));
   torch::Tensor input_copy = input.clone();
   input.ge_(other);
@@ -744,7 +749,7 @@ TEST_F(AtenLtcTsTensorTest, TestLeScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestLeScalarInplace) {
   torch::Tensor input =
-      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat));
+      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar other(float(0));
   torch::Tensor input_copy = input.clone();
   input.le_(other);
@@ -768,7 +773,7 @@ TEST_F(AtenLtcTsTensorTest, TestGtScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestGtScalarInplace) {
   torch::Tensor input =
-      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat));
+      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar other(float(0));
   torch::Tensor input_copy = input.clone();
   input.gt_(other);
@@ -792,7 +797,7 @@ TEST_F(AtenLtcTsTensorTest, TestLtScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestLtScalarInplace) {
   torch::Tensor input =
-      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat));
+      torch::arange(-1., 1.5, 0.5, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar other(float(0));
   torch::Tensor input_copy = input.clone();
   input.lt_(other);
@@ -831,7 +836,7 @@ TEST_F(AtenLtcTsTensorTest, TestSVD) {
   for (auto m : dims) {
     for (auto n : dims) {
       torch::Tensor a =
-          torch::rand({m, n}, torch::TensorOptions(torch::kFloat));
+          torch::rand({m, n}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       auto b = torch::svd(a, /*some=*/true, /*compute_uv=*/true);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_a = CopyToDevice(a, device);
@@ -857,7 +862,7 @@ TEST_F(AtenLtcTsTensorTest, TestQR) {
   for (auto m : dims) {
     for (auto n : dims) {
       torch::Tensor a =
-          torch::rand({m, n}, torch::TensorOptions(torch::kFloat));
+          torch::rand({m, n}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       auto b = torch::qr(a);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_a = CopyToDevice(a, device);
@@ -877,7 +882,7 @@ TEST_F(AtenLtcTsTensorTest, TestSymEig) {
     for (bool eigenvectors : {true, false}) {
       for (bool upper : {true, false}) {
         torch::Tensor a =
-            torch::rand({m, m}, torch::TensorOptions(torch::kFloat));
+            torch::rand({m, m}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor sym_a = a.mm(a.t());
         auto b = torch::symeig(sym_a, eigenvectors, upper);
         ForEachDevice([&](const torch::Device& device) {
@@ -903,9 +908,9 @@ TEST_F(AtenLtcTsTensorTest, TestCholesky) {
   for (auto m : dims) {
     for (bool upper : {true, false}) {
       torch::Tensor a =
-          torch::rand({3, m, m}, torch::TensorOptions(torch::kFloat));
+          torch::rand({3, m, m}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor pd_a = torch::matmul(a, torch::transpose(a, 1, 2)) +
-                           torch::eye(m, torch::TensorOptions(torch::kFloat));
+                           torch::eye(m, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       auto b = torch::cholesky(pd_a, upper);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_a = CopyToDevice(pd_a, device);
@@ -920,9 +925,9 @@ TEST_F(AtenLtcTsTensorTest, TestLogDet) {
   static const int dims[] = {4, 7};
   for (auto m : dims) {
     torch::Tensor a =
-        torch::rand({3, m, m}, torch::TensorOptions(torch::kFloat));
+        torch::rand({3, m, m}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor pd_a = torch::matmul(a, torch::transpose(a, 1, 2)) +
-                         torch::eye(m, torch::TensorOptions(torch::kFloat));
+                         torch::eye(m, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor b = torch::logdet(pd_a);
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a = CopyToDevice(pd_a, device);
@@ -942,9 +947,9 @@ TEST_F(AtenLtcTsTensorTest, TestTriangularSolve) {
             for (bool transpose : {true, false}) {
               for (bool unitriangular : {true, false}) {
                 torch::Tensor a =
-                    torch::randn({m, m}, torch::TensorOptions(torch::kFloat));
+                    torch::randn({m, m}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
                 torch::Tensor b =
-                    torch::randn({m, n}, torch::TensorOptions(torch::kFloat));
+                    torch::randn({m, n}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
                 a = batched_a ? a.expand({3, m, m}).clone() : a;
                 b = batched_b ? b.expand({3, m, n}).clone() : b;
                 auto result = torch::triangular_solve(
@@ -971,7 +976,7 @@ TEST_F(AtenLtcTsTensorTest, TestTriangularSolve) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestKthValue) {
-  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int k = 1; k <= 3; ++k) {
     int rank = a.dim();
     for (int dim = -rank; dim < rank; ++dim) {
@@ -989,7 +994,7 @@ TEST_F(AtenLtcTsTensorTest, TestKthValue) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestTopK) {
-  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int k = 1; k <= 3; ++k) {
     int rank = a.dim();
     for (int dim = -rank; dim < rank; ++dim) {
@@ -1007,7 +1012,7 @@ TEST_F(AtenLtcTsTensorTest, TestTopK) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSort) {
-  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int k = 1; k <= 3; ++k) {
     for (int dim = 0; dim < 3; ++dim) {
       for (bool descending : {false, true}) {
@@ -1037,7 +1042,7 @@ TEST_F(AtenLtcTsTensorTest, TestSortDescWithMinValue) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgSort) {
-  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 5, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int k = 1; k <= 3; ++k) {
     for (int dim = 0; dim < 3; ++dim) {
       for (bool descending : {false, true}) {
@@ -1053,8 +1058,8 @@ TEST_F(AtenLtcTsTensorTest, TestArgSort) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMin) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::min(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1065,8 +1070,8 @@ TEST_F(AtenLtcTsTensorTest, TestMin) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMax) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::max(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1078,7 +1083,7 @@ TEST_F(AtenLtcTsTensorTest, TestMax) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnaryMin) {
   torch::Tensor input =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::min(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -1089,7 +1094,7 @@ TEST_F(AtenLtcTsTensorTest, TestUnaryMin) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnaryMax) {
   torch::Tensor input =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::max(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -1104,8 +1109,8 @@ TEST_F(AtenLtcTsTensorTest, TestAll) {
         torch::kLong}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor b = torch::all(a);
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1117,7 +1122,7 @@ TEST_F(AtenLtcTsTensorTest, TestAll) {
 
 TEST_F(AtenLtcTsTensorTest, TestAllDim) {
   torch::Tensor a =
-      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte));
+      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::all(a, dim, /*keepdim=*/false);
@@ -1131,7 +1136,7 @@ TEST_F(AtenLtcTsTensorTest, TestAllDim) {
 
 TEST_F(AtenLtcTsTensorTest, TestAllDimKeep) {
   torch::Tensor a =
-      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte));
+      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::all(a, dim, /*keepdim=*/true);
@@ -1145,7 +1150,7 @@ TEST_F(AtenLtcTsTensorTest, TestAllDimKeep) {
 
 TEST_F(AtenLtcTsTensorTest, TestAmax) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (bool keepdim : {false, true}) {
     for (int dim = -rank; dim < rank; ++dim) {
@@ -1178,7 +1183,7 @@ TEST_F(AtenLtcTsTensorTest, TestAmax) {
 
 TEST_F(AtenLtcTsTensorTest, TestAmin) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (bool keepdim : {false, true}) {
     for (int dim = -rank; dim < rank; ++dim) {
@@ -1215,8 +1220,8 @@ TEST_F(AtenLtcTsTensorTest, TestAny) {
         torch::kLong}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor b = torch::any(a);
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1228,7 +1233,7 @@ TEST_F(AtenLtcTsTensorTest, TestAny) {
 
 TEST_F(AtenLtcTsTensorTest, TestAnyDim) {
   torch::Tensor a =
-      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte));
+      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::any(a, dim, /*keepdim=*/false);
@@ -1242,7 +1247,7 @@ TEST_F(AtenLtcTsTensorTest, TestAnyDim) {
 
 TEST_F(AtenLtcTsTensorTest, TestAnyDimKeep) {
   torch::Tensor a =
-      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte));
+      torch::randint(0, 5, {2, 3, 4}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::any(a, dim, /*keepdim=*/true);
@@ -1255,7 +1260,7 @@ TEST_F(AtenLtcTsTensorTest, TestAnyDimKeep) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMean) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::mean(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1266,7 +1271,7 @@ TEST_F(AtenLtcTsTensorTest, TestMean) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeanCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::mean(a, torch::kDouble);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1276,7 +1281,7 @@ TEST_F(AtenLtcTsTensorTest, TestMeanCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeanInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::mean(a, {dim});
@@ -1289,7 +1294,7 @@ TEST_F(AtenLtcTsTensorTest, TestMeanInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeanInDims) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     torch::Tensor b = torch::mean(a, dims);
     ForEachDevice([&](const torch::Device& device) {
@@ -1301,7 +1306,7 @@ TEST_F(AtenLtcTsTensorTest, TestMeanInDims) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeanInDimsKeepCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     torch::Tensor b = torch::mean(a, dims, true, torch::kDouble);
     ForEachDevice([&](const torch::Device& device) {
@@ -1313,10 +1318,10 @@ TEST_F(AtenLtcTsTensorTest, TestMeanInDimsKeepCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeanInDimOut) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
-    torch::Tensor b = torch::empty({4, 4}, torch::TensorOptions(torch::kFloat));
+    torch::Tensor b = torch::empty({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::mean_out(b, a, {dim});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1328,7 +1333,7 @@ TEST_F(AtenLtcTsTensorTest, TestMeanInDimOut) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestStd) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto unbiased : {true, false}) {
     torch::Tensor b = torch::std(a, unbiased);
     ForEachDevice([&](const torch::Device& device) {
@@ -1340,7 +1345,7 @@ TEST_F(AtenLtcTsTensorTest, TestStd) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestStdInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (auto unbiased : {true, false}) {
     for (auto keepdim : {true, false}) {
@@ -1357,7 +1362,7 @@ TEST_F(AtenLtcTsTensorTest, TestStdInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestStdWithCorrection) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   c10::optional<int64_t> corrections[] = {1, 2, c10::nullopt};
   for (const auto& correction : corrections) {
@@ -1376,7 +1381,7 @@ TEST_F(AtenLtcTsTensorTest, TestStdWithCorrection) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestStdMeanWithCorrection) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   c10::optional<int64_t> corrections[] = {1, 2, c10::nullopt};
   for (const auto& correction : corrections) {
@@ -1396,7 +1401,7 @@ TEST_F(AtenLtcTsTensorTest, TestStdMeanWithCorrection) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSum) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::sum(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1406,7 +1411,7 @@ TEST_F(AtenLtcTsTensorTest, TestSum) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::sum(a, torch::kDouble);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1416,7 +1421,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumU8) {
-  torch::Tensor a = torch::ones({256}, torch::TensorOptions(torch::kByte));
+  torch::Tensor a = torch::ones({256}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   torch::Tensor b = torch::sum(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1426,7 +1431,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumU8) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::sum(a, {dim});
@@ -1439,7 +1444,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumInDims) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     torch::Tensor b = torch::sum(a, dims);
     ForEachDevice([&](const torch::Device& device) {
@@ -1451,7 +1456,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumInDims) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumInDimsKeep) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     torch::Tensor b = torch::sum(a, dims, /*keepdim=*/true);
     ForEachDevice([&](const torch::Device& device) {
@@ -1463,7 +1468,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumInDimsKeep) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSumInDimsKeepCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     torch::Tensor b = torch::sum(a, dims, /*keepdim=*/true, torch::kDouble);
     ForEachDevice([&](const torch::Device& device) {
@@ -1476,7 +1481,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumInDimsKeepCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestVar) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (bool unbiased : {true, false}) {
     torch::Tensor b = torch::var(a, unbiased);
     ForEachDevice([&](const torch::Device& device) {
@@ -1488,7 +1493,7 @@ TEST_F(AtenLtcTsTensorTest, TestVar) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestVarWithDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     for (bool keepDim : {true, false}) {
       for (bool unbiased : {true, false}) {
@@ -1504,7 +1509,7 @@ TEST_F(AtenLtcTsTensorTest, TestVarWithDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestVarWithCorrection) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   c10::optional<int64_t> corrections[] = {1, 2, c10::nullopt};
   for (const auto& dim : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     for (bool keepDim : {true, false}) {
@@ -1523,7 +1528,7 @@ TEST_F(AtenLtcTsTensorTest, TestVarWithCorrection) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestVarMeanWithCorrection) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   c10::optional<int64_t> corrections[] = {1, 2, c10::nullopt};
   for (const auto& dim : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     for (const auto& correction : corrections) {
@@ -1542,7 +1547,7 @@ TEST_F(AtenLtcTsTensorTest, TestVarMeanWithCorrection) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxInDim) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     for (bool keepdim : {false, true}) {
@@ -1560,7 +1565,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxInDim) {
 
 TEST_F(AtenLtcTsTensorTest, TestMinInDim) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     for (bool keepdim : {false, true}) {
@@ -1577,7 +1582,7 @@ TEST_F(AtenLtcTsTensorTest, TestMinInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNorm) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::norm(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1587,7 +1592,7 @@ TEST_F(AtenLtcTsTensorTest, TestNorm) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNormInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::norm(a, 2, {dim}, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -1599,7 +1604,7 @@ TEST_F(AtenLtcTsTensorTest, TestNormInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNormInDims) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 2}, {-2, -1}}) {
     torch::Tensor b = torch::norm(a, 2, dims, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -1611,7 +1616,7 @@ TEST_F(AtenLtcTsTensorTest, TestNormInDims) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNormInDimsKeep) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 2}, {-2, -1}}) {
     torch::Tensor b = torch::norm(a, 2, dims, /*keepdim=*/true);
     ForEachDevice([&](const torch::Device& device) {
@@ -1747,7 +1752,7 @@ TEST_F(AtenLtcTsTensorTest, TestRandomInPlaceDefault) {
 
 TEST_F(AtenLtcTsTensorTest, TestNormGeneral) {
   torch::Tensor a =
-      torch::randn({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::norm(a, 3.5);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1757,7 +1762,7 @@ TEST_F(AtenLtcTsTensorTest, TestNormGeneral) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNormNuclear) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::norm(a, 1);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1767,7 +1772,7 @@ TEST_F(AtenLtcTsTensorTest, TestNormNuclear) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFrobeniusNorm) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::frobenius_norm(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1777,7 +1782,7 @@ TEST_F(AtenLtcTsTensorTest, TestFrobeniusNorm) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFrobeniusNormInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::frobenius_norm(a, {dim}, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -1790,7 +1795,7 @@ TEST_F(AtenLtcTsTensorTest, TestFrobeniusNormInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFrobeniusNormInDims) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 2}, {-2, -1}}) {
     torch::Tensor b = torch::frobenius_norm(a, dims, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -1805,11 +1810,11 @@ TEST_F(AtenLtcTsTensorTest, TestFrobeniusNormInDims) {
 TEST_F(AtenLtcTsTensorTest, TestGroupNorm) {
   int num_channels = 6;
   torch::Tensor input = torch::rand({20, num_channels, 10, 10},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double eps = 1e-05;
   for (int num_groups : {3, 6, 1}) {
     torch::Tensor output =
@@ -1831,11 +1836,11 @@ TEST_F(AtenLtcTsTensorTest, TestGroupNormBackward) {
   int num_channels = 6;
   torch::Tensor input =
       torch::rand({2, num_channels, 5, 5},
-                  torch::TensorOptions(torch::kFloat).requires_grad(true));
+                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   torch::Tensor weight = torch::rand(
-      {num_channels}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   torch::Tensor bias = torch::rand(
-      {num_channels}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   double eps = 1e-05;
   for (bool undef_weight : {true, false}) {
     for (int num_groups : {3, 6, 1}) {
@@ -1862,15 +1867,15 @@ TEST_F(AtenLtcTsTensorTest, TestInstanceNorm) {
   int batch = 5;
   int num_channels = 20;
   torch::Tensor input = torch::rand({batch, num_channels, 10, 10},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_mean =
-      torch::zeros({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::zeros({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_var =
-      torch::ones({num_channels}, torch::TensorOptions(torch::kFloat));
+      torch::ones({num_channels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double momentum = 0.1;
   double eps = 1e-05;
   torch::Tensor output = torch::instance_norm(
@@ -1891,16 +1896,16 @@ TEST_F(AtenLtcTsTensorTest, TestInstanceNorm) {
 
 TEST_F(AtenLtcTsTensorTest, TestLayerNorm) {
   torch::Tensor input =
-      torch::rand({20, 10, 10, 10}, torch::TensorOptions(torch::kFloat));
+      torch::rand({20, 10, 10, 10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double eps = 1e-05;
   torch::Tensor undef;
   for (bool undef_weight : {true, false}) {
     for (int64_t normalized_size : {2, 3}) {
       std::vector<int64_t> normalized_shape(normalized_size, 10);
       torch::Tensor weight =
-          torch::rand(normalized_shape, torch::TensorOptions(torch::kFloat));
+          torch::rand(normalized_shape, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor bias =
-          torch::rand(normalized_shape, torch::TensorOptions(torch::kFloat));
+          torch::rand(normalized_shape, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor output = torch::layer_norm(input, normalized_shape,
                                                undef_weight ? undef : weight,
                                                undef_weight ? undef : bias, eps,
@@ -1922,7 +1927,7 @@ TEST_F(AtenLtcTsTensorTest, TestLayerNorm) {
 
 TEST_F(AtenLtcTsTensorTest, TestLayerNormBackward) {
   torch::Tensor input = torch::rand(
-      {2, 3, 3, 3}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {2, 3, 3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   double eps = 1e-05;
   for (bool undef_weight : {true, false}) {
     for (int64_t normalized_size : {2, 3}) {
@@ -1936,10 +1941,10 @@ TEST_F(AtenLtcTsTensorTest, TestLayerNormBackward) {
       };
       torch::Tensor weight =
           torch::rand(normalized_shape,
-                      torch::TensorOptions(torch::kFloat).requires_grad(true));
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor bias =
           torch::rand(normalized_shape,
-                      torch::TensorOptions(torch::kFloat).requires_grad(true));
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor undef;
       ForEachDevice([&](const torch::Device& device) {
         TestBackward(
@@ -1952,7 +1957,7 @@ TEST_F(AtenLtcTsTensorTest, TestLayerNormBackward) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNuclearNorm) {
-  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::nuclear_norm(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -1962,8 +1967,8 @@ TEST_F(AtenLtcTsTensorTest, TestNuclearNorm) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestPairwiseDistance) {
-  torch::Tensor x1 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor x2 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor x1 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor x2 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double eps = 1e-6;
   for (bool keepdim : {false, true}) {
     for (double p : {1, 2, 3, 4}) {
@@ -1981,8 +1986,8 @@ TEST_F(AtenLtcTsTensorTest, TestPairwiseDistance) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestCosineSimilarity) {
-  torch::Tensor x1 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor x2 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor x1 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor x2 = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double eps = 1e-8;
   int rank = x1.dim();
   for (int dim = -rank; dim < rank; ++dim) {
@@ -1999,10 +2004,10 @@ TEST_F(AtenLtcTsTensorTest, TestCosineSimilarity) {
 
 TEST_F(AtenLtcTsTensorTest, TestCosineEmbeddingLoss) {
   torch::Tensor input1 =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor input2 =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor target = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor target = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum}) {
     for (double margin : {0., 0.2}) {
@@ -2022,9 +2027,9 @@ TEST_F(AtenLtcTsTensorTest, TestCosineEmbeddingLoss) {
 
 TEST_F(AtenLtcTsTensorTest, TestHingeEmbeddingLoss) {
   torch::Tensor input =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum}) {
     for (double margin : {0., 0.2}) {
@@ -2043,11 +2048,11 @@ TEST_F(AtenLtcTsTensorTest, TestHingeEmbeddingLoss) {
 
 TEST_F(AtenLtcTsTensorTest, TestTripletMarginLoss) {
   torch::Tensor anchor =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor positive =
-      torch::abs(torch::rand({4, 3}, torch::TensorOptions(torch::kFloat)));
+      torch::abs(torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
   torch::Tensor negative = torch::neg(
-      torch::abs(torch::rand({4, 3}, torch::TensorOptions(torch::kFloat))));
+      torch::abs(torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))));
   double eps = 1e-6;
   for (double margin : {0., 0.2}) {
     for (double p : {1, 2, 3, 4}) {
@@ -2075,11 +2080,11 @@ TEST_F(AtenLtcTsTensorTest, TestBinaryCrossEntropy) {
   int batch = 10;
   int classes = 5;
   torch::Tensor input =
-      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor undef;
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum,
@@ -2102,11 +2107,11 @@ TEST_F(AtenLtcTsTensorTest, TestBinaryCrossEntropy) {
 
 TEST_F(AtenLtcTsTensorTest, TestMarginRankingLoss) {
   torch::Tensor input1 =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor input2 =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum}) {
     for (double margin : {0., 0.2}) {
@@ -2128,13 +2133,13 @@ TEST_F(AtenLtcTsTensorTest, TestBCEWithLogits) {
   int batch = 10;
   int classes = 5;
   torch::Tensor input =
-      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({batch, classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor pos_weight =
-      torch::rand({classes}, torch::TensorOptions(torch::kFloat));
+      torch::rand({classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor undef;
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum}) {
@@ -2160,9 +2165,9 @@ TEST_F(AtenLtcTsTensorTest, TestBCEWithLogits) {
 
 TEST_F(AtenLtcTsTensorTest, TestKlDiv) {
   torch::Tensor input =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (bool log_target : {true, false}) {
     for (torch::Reduction::Reduction reduction :
          {torch::Reduction::Mean, torch::Reduction::Sum}) {
@@ -2180,7 +2185,7 @@ TEST_F(AtenLtcTsTensorTest, TestKlDiv) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestProd) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::prod(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2190,7 +2195,7 @@ TEST_F(AtenLtcTsTensorTest, TestProd) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestProdCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::prod(a, torch::kDouble);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2200,7 +2205,7 @@ TEST_F(AtenLtcTsTensorTest, TestProdCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestProdInDim) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::prod(a, dim);
@@ -2213,7 +2218,7 @@ TEST_F(AtenLtcTsTensorTest, TestProdInDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestProdInDimKeepCast) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::prod(a, dim, /*keepdim=*/true, torch::kDouble);
@@ -2227,7 +2232,7 @@ TEST_F(AtenLtcTsTensorTest, TestProdInDimKeepCast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestProdInDimKeep) {
-  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor b = torch::prod(a, dim, /*keepdim=*/true);
@@ -2241,7 +2246,7 @@ TEST_F(AtenLtcTsTensorTest, TestProdInDimKeep) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumSum) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim);
@@ -2255,7 +2260,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumSum) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumSumCast) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim, torch::kDouble);
@@ -2269,7 +2274,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumSumCast) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumSumLong) {
   torch::Tensor input =
-      torch::randint(1000, {4, 3, 4}, torch::TensorOptions(torch::kLong));
+      torch::randint(1000, {4, 3, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim);
@@ -2283,7 +2288,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumSumLong) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumSumCastLong) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim, torch::kLong);
@@ -2297,7 +2302,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumSumCastLong) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumProd) {
   torch::Tensor input =
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumprod(input, dim);
@@ -2311,7 +2316,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumProd) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumProdCast) {
   torch::Tensor input = torch::mul(
-      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat)), 10);
+      torch::rand({4, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())), 10);
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumprod(input, dim, torch::kDouble);
@@ -2325,7 +2330,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumProdCast) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumProdLong) {
   torch::Tensor input =
-      torch::randint(7, {2, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(7, {2, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim);
@@ -2339,7 +2344,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumProdLong) {
 
 TEST_F(AtenLtcTsTensorTest, TestCumProdCastLong) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat)) * 7;
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 7;
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cumsum(input, dim, torch::kLong);
@@ -2352,7 +2357,7 @@ TEST_F(AtenLtcTsTensorTest, TestCumProdCastLong) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMin) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::argmin(a, c10::nullopt, /*keepdim=*/false);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2362,7 +2367,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMin) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMinDim) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmin(a, dim, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -2374,7 +2379,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMinDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMinDimKeep) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmin(a, dim, /*keepdim=*/true);
     ForEachDevice([&](const torch::Device& device) {
@@ -2386,7 +2391,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMinDimKeep) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMinSameValue) {
-  torch::Tensor a = torch::ones({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::ones({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::argmin(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2396,7 +2401,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMinSameValue) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMinWrapper) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmin(a, dim, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -2408,7 +2413,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMinWrapper) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMax) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::argmax(a, c10::nullopt, /*keepdim=*/false);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2418,7 +2423,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMax) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMaxDim) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmax(a, dim, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -2430,7 +2435,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMaxDim) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMaxDimKeep) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmax(a, dim, /*keepdim=*/true);
     ForEachDevice([&](const torch::Device& device) {
@@ -2442,7 +2447,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMaxDimKeep) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMaxSameValue) {
-  torch::Tensor a = torch::ones({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::ones({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::argmax(a, c10::nullopt, /*keepdim=*/false);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2452,7 +2457,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMaxSameValue) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestArgMaxWrapper) {
-  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor b = torch::argmax(a, dim, /*keepdim=*/false);
     ForEachDevice([&](const torch::Device& device) {
@@ -2464,7 +2469,7 @@ TEST_F(AtenLtcTsTensorTest, TestArgMaxWrapper) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAsin) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::asin(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2474,7 +2479,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsin) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAsinh) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::asinh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2484,7 +2489,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsinh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAsinhInPlace) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor b = torch::asinh_(a);
@@ -2495,7 +2500,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsinhInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSin) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::sin(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2505,7 +2510,7 @@ TEST_F(AtenLtcTsTensorTest, TestSin) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSinh) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::sinh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2515,7 +2520,7 @@ TEST_F(AtenLtcTsTensorTest, TestSinh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAcos) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::acos(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2526,7 +2531,7 @@ TEST_F(AtenLtcTsTensorTest, TestAcos) {
 
 TEST_F(AtenLtcTsTensorTest, TestAcosh) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100;
   torch::Tensor b = torch::acosh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2537,7 +2542,7 @@ TEST_F(AtenLtcTsTensorTest, TestAcosh) {
 
 TEST_F(AtenLtcTsTensorTest, TestAcoshInPlace) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor b = torch::acosh_(a);
@@ -2548,7 +2553,7 @@ TEST_F(AtenLtcTsTensorTest, TestAcoshInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestCos) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::cos(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2558,7 +2563,7 @@ TEST_F(AtenLtcTsTensorTest, TestCos) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestCosh) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::cosh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2568,7 +2573,7 @@ TEST_F(AtenLtcTsTensorTest, TestCosh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAtan) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::atan(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2578,7 +2583,7 @@ TEST_F(AtenLtcTsTensorTest, TestAtan) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAtanh) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::atanh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2588,7 +2593,7 @@ TEST_F(AtenLtcTsTensorTest, TestAtanh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAtanhInPlace) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor b = torch::atanh_(a);
@@ -2599,8 +2604,8 @@ TEST_F(AtenLtcTsTensorTest, TestAtanhInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAtan2) {
-  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::atan2(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2611,7 +2616,7 @@ TEST_F(AtenLtcTsTensorTest, TestAtan2) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestTan) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::tan(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2621,7 +2626,7 @@ TEST_F(AtenLtcTsTensorTest, TestTan) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestTanh) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::tanh(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2631,7 +2636,7 @@ TEST_F(AtenLtcTsTensorTest, TestTanh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMinMax) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar min_val(0.311);
   torch::Scalar max_val(0.409);
   torch::Tensor b = torch::clamp(a, min_val, max_val);
@@ -2643,7 +2648,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMinMax) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMin) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar min_val(0.311);
   torch::Tensor b = torch::clamp(a, min_val, c10::nullopt);
   ForEachDevice([&](const torch::Device& device) {
@@ -2654,7 +2659,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMin) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMax) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar max_val(0.409);
   torch::Tensor b = torch::clamp(a, c10::nullopt, max_val);
   ForEachDevice([&](const torch::Device& device) {
@@ -2665,7 +2670,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMax) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMinExplicit) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar min_val(0.311);
   torch::Tensor b = torch::clamp_min(a, min_val);
   ForEachDevice([&](const torch::Device& device) {
@@ -2676,7 +2681,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMinExplicit) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMaxExplicit) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar max_val(0.409);
   torch::Tensor b = torch::clamp_max(a, max_val);
   ForEachDevice([&](const torch::Device& device) {
@@ -2687,7 +2692,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMaxExplicit) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMinExplicitInPlace) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar min_val(0.311);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2699,7 +2704,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMinExplicitInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestClampMaxExplicitInPlace) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar max_val(0.409);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2712,7 +2717,7 @@ TEST_F(AtenLtcTsTensorTest, TestClampMaxExplicitInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestCeil) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::ceil(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2723,7 +2728,7 @@ TEST_F(AtenLtcTsTensorTest, TestCeil) {
 
 TEST_F(AtenLtcTsTensorTest, TestFloor) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::floor(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2734,10 +2739,10 @@ TEST_F(AtenLtcTsTensorTest, TestFloor) {
 
 TEST_F(AtenLtcTsTensorTest, TestRound) {
   torch::Tensor a = torch::cat(
-      {torch::randn({8}, torch::TensorOptions(torch::kFloat)) * 100.0,
+      {torch::randn({8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0,
        // Special case: 0.5, -0.5. lazy::Round impl rounds to -1/1 whereas
        // lazy::RoundToEven properly implements bankers rounding.
-       torch::tensor({-0.5, 0.5}, torch::TensorOptions(torch::kFloat))},
+       torch::tensor({-0.5, 0.5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))},
       0);
   torch::Tensor b = torch::round(a);
   ForEachDevice([&](const torch::Device& device) {
@@ -2749,7 +2754,7 @@ TEST_F(AtenLtcTsTensorTest, TestRound) {
 
 TEST_F(AtenLtcTsTensorTest, TestTrunc) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::trunc(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2760,7 +2765,7 @@ TEST_F(AtenLtcTsTensorTest, TestTrunc) {
 
 TEST_F(AtenLtcTsTensorTest, TestFrac) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::frac(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2770,7 +2775,7 @@ TEST_F(AtenLtcTsTensorTest, TestFrac) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNeg) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::neg(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2813,7 +2818,7 @@ TEST_F(AtenLtcTsTensorTest, TestBitwiseNotInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestSign) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b = torch::sign(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2824,7 +2829,7 @@ TEST_F(AtenLtcTsTensorTest, TestSign) {
 
 TEST_F(AtenLtcTsTensorTest, TestSignByte) {
   torch::Tensor a =
-      torch::randint(256, {2, 2}, torch::TensorOptions(torch::kByte));
+      torch::randint(256, {2, 2}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   torch::Tensor b = torch::sign(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2834,7 +2839,7 @@ TEST_F(AtenLtcTsTensorTest, TestSignByte) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAbs) {
-  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::abs(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2845,7 +2850,7 @@ TEST_F(AtenLtcTsTensorTest, TestAbs) {
 
 TEST_F(AtenLtcTsTensorTest, TestAbsByte) {
   torch::Tensor a =
-      torch::randint(256, {2, 2}, torch::TensorOptions(torch::kByte));
+      torch::randint(256, {2, 2}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   torch::Tensor b = torch::abs(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2855,7 +2860,7 @@ TEST_F(AtenLtcTsTensorTest, TestAbsByte) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEmptyLike) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::empty_like(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2865,18 +2870,18 @@ TEST_F(AtenLtcTsTensorTest, TestEmptyLike) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEmptyLikeOptions) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::empty_like(a, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::empty_like(a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b =
-        torch::empty_like(xla_a, torch::TensorOptions(torch::kFloat));
+        torch::empty_like(xla_a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     EXPECT_EQ(b.sizes(), xla_b.sizes());
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEmpty) {
-  torch::Tensor a = torch::zeros({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::zeros({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = torch::empty(
         {2, 2}, torch::TensorOptions(torch::kFloat).device(device));
@@ -2885,7 +2890,7 @@ TEST_F(AtenLtcTsTensorTest, TestEmpty) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestZeroInPlace) {
-  torch::Tensor input = torch::ones({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::ones({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
 
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor lazyInput = CopyToDevice(input, device);
@@ -2896,7 +2901,7 @@ TEST_F(AtenLtcTsTensorTest, TestZeroInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestZerosLike) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::zeros_like(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2906,18 +2911,18 @@ TEST_F(AtenLtcTsTensorTest, TestZerosLike) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestZerosLikeOptions) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::zeros_like(a, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::zeros_like(a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b =
-        torch::zeros_like(xla_a, torch::TensorOptions(torch::kFloat));
+        torch::zeros_like(xla_a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     AllClose(a, xla_a);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestZeros) {
-  torch::Tensor a = torch::zeros({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::zeros({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = torch::zeros(
         {2, 2}, torch::TensorOptions(torch::kFloat).device(device));
@@ -2926,7 +2931,7 @@ TEST_F(AtenLtcTsTensorTest, TestZeros) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestOnes) {
-  torch::Tensor a = torch::ones({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::ones({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a =
         torch::ones({2, 2}, torch::TensorOptions(torch::kFloat).device(device));
@@ -2935,7 +2940,7 @@ TEST_F(AtenLtcTsTensorTest, TestOnes) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestOnesLike) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::ones_like(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2945,19 +2950,19 @@ TEST_F(AtenLtcTsTensorTest, TestOnesLike) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestOnesLikeOptions) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::ones_like(a, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::ones_like(a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b =
-        torch::ones_like(xla_a, torch::TensorOptions(torch::kFloat));
+        torch::ones_like(xla_a, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     AllClose(a, xla_a);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFull) {
   torch::Tensor a =
-      torch::full({2, 2}, 3.1165, torch::TensorOptions(torch::kFloat));
+      torch::full({2, 2}, 3.1165, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = torch::full(
         {2, 2}, 3.1165, torch::TensorOptions(torch::kFloat).device(device));
@@ -2966,7 +2971,7 @@ TEST_F(AtenLtcTsTensorTest, TestFull) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFullLike) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::full_like(a, 3.1165);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -2976,13 +2981,13 @@ TEST_F(AtenLtcTsTensorTest, TestFullLike) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestFullLikeOptions) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b =
-      torch::full_like(a, 3.1165, torch::TensorOptions(torch::kFloat));
+      torch::full_like(a, 3.1165, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b =
-        torch::full_like(xla_a, 3.1165, torch::TensorOptions(torch::kFloat));
+        torch::full_like(xla_a, 3.1165, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     AllClose(a, xla_a);
   });
 }
@@ -2991,7 +2996,7 @@ TEST_F(AtenLtcTsTensorTest, TestARange) {
   for (auto& ranges : std::vector<std::vector<float>>{{0.0, 100.0, 0.5},
                                                       {0.0, -100.0, -0.5}}) {
     torch::Tensor a = torch::arange(ranges[0], ranges[1], ranges[2],
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_a =
           torch::arange(ranges[0], ranges[1], ranges[2],
@@ -3002,7 +3007,7 @@ TEST_F(AtenLtcTsTensorTest, TestARange) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestARangeOut) {
-  torch::Tensor a = torch::randn({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto& ranges : std::vector<std::vector<float>>{{0.0, 100.0, 0.5},
                                                       {0.0, -100.0, -0.5}}) {
     torch::Tensor b = torch::arange_out(a, ranges[0], ranges[1], ranges[2]);
@@ -3016,7 +3021,7 @@ TEST_F(AtenLtcTsTensorTest, TestARangeOut) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestDimARange) {
-  torch::Tensor like = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor like = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor a = torch::_dim_arange(like, 1);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_like = CopyToDevice(like, device);
@@ -3030,7 +3035,7 @@ TEST_F(AtenLtcTsTensorTest, TestBartlettWindow) {
   for (bool periodic : {false, true}) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor output = torch::bartlett_window(
-          window_length, periodic, torch::TensorOptions(torch::kFloat));
+          window_length, periodic, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
 
       torch::Tensor xla_output = torch::bartlett_window(
           window_length, periodic,
@@ -3045,7 +3050,7 @@ TEST_F(AtenLtcTsTensorTest, TestBlackmanWindow) {
   for (bool periodic : {false, true}) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor output = torch::blackman_window(
-          window_length, periodic, torch::TensorOptions(torch::kFloat));
+          window_length, periodic, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_output = torch::blackman_window(
           window_length, periodic,
           torch::TensorOptions(torch::kFloat).device(device));
@@ -3062,7 +3067,7 @@ TEST_F(AtenLtcTsTensorTest, TestHammingWindow) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor output =
           torch::hamming_window(window_length, periodic, alpha, beta,
-                                torch::TensorOptions(torch::kFloat));
+                                torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_output = torch::hamming_window(
           window_length, periodic, alpha, beta,
           torch::TensorOptions(torch::kFloat).device(device));
@@ -3076,7 +3081,7 @@ TEST_F(AtenLtcTsTensorTest, TestHannWindow) {
   for (bool periodic : {false, true}) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor output = torch::hann_window(
-          window_length, periodic, torch::TensorOptions(torch::kFloat));
+          window_length, periodic, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_output = torch::hann_window(
           window_length, periodic,
           torch::TensorOptions(torch::kFloat).device(device));
@@ -3086,7 +3091,7 @@ TEST_F(AtenLtcTsTensorTest, TestHannWindow) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLogSigmoid) {
-  torch::Tensor a = torch::empty({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::empty({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   a.uniform_(-1.0, 1.0);
   torch::Tensor b = torch::log_sigmoid(a);
   ForEachDevice([&](const torch::Device& device) {
@@ -3097,7 +3102,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSigmoid) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLogSigmoidForward) {
-  torch::Tensor a = torch::empty({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::empty({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   a.uniform_(-1.0, 1.0);
   auto tuple = torch::log_sigmoid_forward(a);
   ForEachDevice([&](const torch::Device& device) {
@@ -3111,7 +3116,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSigmoidForward) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLogsumexp) {
-  torch::Tensor a = torch::rand({3, 4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (auto dims : std::vector<std::vector<int64_t>>{{0, 1}, {-3, -2}}) {
     for (bool keepdim : {false, true}) {
       torch::Tensor b = torch::logsumexp(a, dims, keepdim);
@@ -3125,7 +3130,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogsumexp) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSiLU) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::silu(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3136,7 +3141,7 @@ TEST_F(AtenLtcTsTensorTest, TestSiLU) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSigmoid) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::sigmoid(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3146,8 +3151,8 @@ TEST_F(AtenLtcTsTensorTest, TestSigmoid) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMatmul_1x1) {
-  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::matmul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3158,8 +3163,8 @@ TEST_F(AtenLtcTsTensorTest, TestMatmul_1x1) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMatmul_2x1) {
-  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::matmul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3170,8 +3175,8 @@ TEST_F(AtenLtcTsTensorTest, TestMatmul_2x1) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMatmul_1x2) {
-  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::matmul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3182,8 +3187,8 @@ TEST_F(AtenLtcTsTensorTest, TestMatmul_1x2) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMatmul_2x2) {
-  torch::Tensor a = torch::rand({2, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::matmul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3195,9 +3200,9 @@ TEST_F(AtenLtcTsTensorTest, TestMatmul_2x2) {
 
 TEST_F(AtenLtcTsTensorTest, TestMatmulBcast) {
   torch::Tensor a =
-      torch::rand({4, 2, 3, 2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 2, 3, 2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b =
-      torch::rand({2, 1, 4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::matmul(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3208,8 +3213,8 @@ TEST_F(AtenLtcTsTensorTest, TestMatmulBcast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestDot) {
-  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::dot(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3220,8 +3225,8 @@ TEST_F(AtenLtcTsTensorTest, TestDot) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestTensorDot) {
-  torch::Tensor a = torch::rand({6, 4, 8}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4, 7, 8}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({6, 4, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4, 7, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> dims_a = {1, 2};
   std::vector<int64_t> dims_b = {0, 2};
   torch::Tensor c = torch::tensordot(a, b, dims_a, dims_b);
@@ -3234,8 +3239,8 @@ TEST_F(AtenLtcTsTensorTest, TestTensorDot) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGer) {
-  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::ger(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3246,8 +3251,8 @@ TEST_F(AtenLtcTsTensorTest, TestGer) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMv) {
-  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::mv(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3258,9 +3263,9 @@ TEST_F(AtenLtcTsTensorTest, TestMv) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMvOut) {
-  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::mv_out(c, a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3272,9 +3277,9 @@ TEST_F(AtenLtcTsTensorTest, TestMvOut) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBatchAddBatchMatMul) {
-  torch::Tensor a = torch::rand({3, 6, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 6, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 0.5;
   torch::Scalar beta = 1.5;
   torch::Tensor d = torch::baddbmm(a, b, c, beta, alpha);
@@ -3288,9 +3293,9 @@ TEST_F(AtenLtcTsTensorTest, TestBatchAddBatchMatMul) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBatchAddBatchMatMulInPlace) {
-  torch::Tensor a = torch::rand({3, 6, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 6, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 0.5;
   torch::Scalar beta = 1.5;
   ForEachDevice([&](const torch::Device& device) {
@@ -3305,8 +3310,8 @@ TEST_F(AtenLtcTsTensorTest, TestBatchAddBatchMatMulInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBatchMatMul) {
-  torch::Tensor a = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 4, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::bmm(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3317,10 +3322,10 @@ TEST_F(AtenLtcTsTensorTest, TestBatchMatMul) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestChainMatMul) {
-  torch::Tensor a = torch::rand({5, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({4, 6}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({6, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor d = torch::rand({2, 7}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({5, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({6, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor d = torch::rand({2, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::chain_matmul({a, b, c, d});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3335,10 +3340,10 @@ TEST_F(AtenLtcTsTensorTest, TestChainMatMul) {
 
 TEST_F(AtenLtcTsTensorTest, TestLinear) {
   torch::Tensor input =
-      torch::rand({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor bias = torch::rand({3});
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor bias = torch::rand({3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::linear(input, weight);
   torch::Tensor result_with_bias = torch::linear(input, weight, bias);
   ForEachDevice([&](const torch::Device& device) {
@@ -3356,7 +3361,7 @@ TEST_F(AtenLtcTsTensorTest, TestLinear) {
 
 TEST_F(AtenLtcTsTensorTest, TestPinverse) {
   torch::Tensor input =
-      torch::rand({4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::pinverse(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -3366,8 +3371,8 @@ TEST_F(AtenLtcTsTensorTest, TestPinverse) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumOuter) {
-  torch::Tensor a = torch::rand({5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "i,j->ij";
   torch::Tensor c = torch::einsum(equation, {a, b});
   ForEachDevice([&](const torch::Device& device) {
@@ -3380,9 +3385,9 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumOuter) {
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumOuterBackward) {
   torch::Tensor a =
-      torch::rand({5}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   torch::Tensor b =
-      torch::rand({5}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   std::string equation = "i,j->ij";
   auto testfn = [&](const std::vector<torch::Tensor>& inputs) -> torch::Tensor {
     return torch::einsum(equation, inputs);
@@ -3393,8 +3398,8 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumOuterBackward) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumBatchMatMul) {
-  torch::Tensor a = torch::rand({3, 2, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 5, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 2, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 5, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "bij,bjk->bik";
   torch::Tensor c = torch::einsum(equation, {a, b});
   ForEachDevice([&](const torch::Device& device) {
@@ -3406,9 +3411,9 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumBatchMatMul) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBilinear) {
-  torch::Tensor a = torch::rand({3, 5, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor l = torch::rand({2, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor r = torch::rand({2, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 5, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor l = torch::rand({2, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor r = torch::rand({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "bn,anm,bm->ba";
   torch::Tensor c = torch::einsum(equation, {l, a, r});
   ForEachDevice([&](const torch::Device& device) {
@@ -3422,7 +3427,7 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBilinear) {
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerDiagonal) {
   torch::Tensor input =
-      torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "ii->i";
   torch::Tensor result = torch::einsum(equation, {input});
   ForEachDevice([&](const torch::Device& device) {
@@ -3434,7 +3439,7 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerDiagonal) {
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBatchDiagonal) {
   torch::Tensor input =
-      torch::rand({4, 3, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "...ii->...i";
   torch::Tensor result = torch::einsum(equation, {input});
   ForEachDevice([&](const torch::Device& device) {
@@ -3446,7 +3451,7 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBatchDiagonal) {
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBatchPermute) {
   torch::Tensor input =
-      torch::rand({2, 3, 4, 5}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "...ij->...ji";
   torch::Tensor result = torch::einsum(equation, {input});
   ForEachDevice([&](const torch::Device& device) {
@@ -3457,8 +3462,8 @@ TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerBatchPermute) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEinsumPyTorchLowerRepeatedAxis) {
-  torch::Tensor x = torch::rand({2, 3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor y = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor x = torch::rand({2, 3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor y = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::string equation = "ijj,k->ik";
   torch::Tensor result = torch::einsum(equation, {x, y});
   ForEachDevice([&](const torch::Device& device) {
@@ -3475,13 +3480,13 @@ TEST_F(AtenLtcTsTensorTest, TestBilinear) {
   int in2_features = 6;
   int out_features = 8;
   torch::Tensor input1 = torch::rand({batch_size, in1_features},
-                                     torch::TensorOptions(torch::kFloat));
+                                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor input2 = torch::rand({batch_size, in2_features},
-                                     torch::TensorOptions(torch::kFloat));
+                                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight = torch::rand({out_features, in1_features, in2_features},
-                                     torch::TensorOptions(torch::kFloat));
+                                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({out_features}, torch::TensorOptions(torch::kFloat));
+      torch::rand({out_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input1 = CopyToDevice(input1, device);
     torch::Tensor xla_input2 = CopyToDevice(input2, device);
@@ -3502,7 +3507,7 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleNearest2D) {
   int uw = 8;
   int chans = 2;
   torch::Tensor input = torch::rand({batch_size, chans, h, w},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor result = torch::upsample_nearest2d(input, {uh, uw});
@@ -3524,7 +3529,7 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleNearest2DBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({batch_size, chans, h, w},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -3537,7 +3542,7 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleNearest2DWithScale) {
   double scale_h = 2.5;
   double scale_w = 3.4;
   torch::Tensor input = torch::rand({batch_size, chans, h, w},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor result = torch::upsample_nearest2d(
@@ -3562,7 +3567,7 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleNearest2DBackwardWithScale) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({batch_size, chans, h, w},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -3576,7 +3581,7 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleBilinear2D) {
   int chans = 2;
   for (bool align_corners : {true, false}) {
     torch::Tensor input = torch::rand({batch_size, chans, h, w},
-                                      torch::TensorOptions(torch::kFloat));
+                                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_input = CopyToDevice(input, device);
       torch::Tensor result =
@@ -3604,16 +3609,16 @@ TEST_F(AtenLtcTsTensorTest, TestUpsampleBilinear2DBackward) {
       TestBackward(
           {torch::rand(
               {batch_size, chans, h, w},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn);
     });
   }
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddCMul) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor d = torch::addcmul(a, b, c, 3.1165);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3625,10 +3630,10 @@ TEST_F(AtenLtcTsTensorTest, TestAddCMul) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddCDiv) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c =
-      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat))) +
+      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))) +
       1.0;
   torch::Tensor d = torch::addcdiv(a, b, c, 3.1165);
   ForEachDevice([&](const torch::Device& device) {
@@ -3641,10 +3646,10 @@ TEST_F(AtenLtcTsTensorTest, TestAddCDiv) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAddCDivWithBroadcast) {
-  torch::Tensor a = torch::rand({1, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 1}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({1, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c =
-      torch::abs(torch::rand({1, 3}, torch::TensorOptions(torch::kFloat))) +
+      torch::abs(torch::rand({1, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))) +
       1.0;
   torch::Tensor d = torch::addcdiv(a, b, c, 3.1165);
   ForEachDevice([&](const torch::Device& device) {
@@ -3658,7 +3663,7 @@ TEST_F(AtenLtcTsTensorTest, TestAddCDivWithBroadcast) {
 
 TEST_F(AtenLtcTsTensorTest, TestSize) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -3685,7 +3690,7 @@ TEST_F(AtenLtcTsTensorTest, TestSelect) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBernoulliScalarProb) {
-  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor xla_output = torch::bernoulli(xla_input, 0.1);
@@ -3698,7 +3703,7 @@ TEST_F(AtenLtcTsTensorTest, TestBernoulliScalarProb) {
 TEST_F(AtenLtcTsTensorTest, TestBernoulliTensorProb) {
   std::vector<float> prob_values(1000, 0.1);
   torch::Tensor input =
-      torch::tensor(prob_values, torch::TensorOptions(torch::kFloat));
+      torch::tensor(prob_values, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor xla_output = torch::bernoulli(xla_input);
@@ -3709,7 +3714,7 @@ TEST_F(AtenLtcTsTensorTest, TestBernoulliTensorProb) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBernoulliScalarProbInPlace) {
-  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     xla_input.bernoulli_(0.1);
@@ -3720,9 +3725,9 @@ TEST_F(AtenLtcTsTensorTest, TestBernoulliScalarProbInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBernoulliTensorProbInPlace) {
-  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::zeros(1000, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor prob =
-      torch::scalar_tensor(0.1, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(0.1, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor xla_prob = CopyToDevice(prob, device);
@@ -3734,7 +3739,7 @@ TEST_F(AtenLtcTsTensorTest, TestBernoulliTensorProbInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestDropout) {
-  torch::Tensor a = torch::rand({17, 21}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({17, 21}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor xla_b = torch::dropout(xla_a, 0.1, /*train=*/true);
@@ -3747,7 +3752,7 @@ TEST_F(AtenLtcTsTensorTest, TestDropout) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestDropoutInPlace) {
-  torch::Tensor a = torch::rand({17, 21}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({17, 21}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::dropout_(xla_a, 0.1, /*train=*/true);
@@ -3772,7 +3777,7 @@ TEST_F(AtenLtcTsTensorTest, TestRandperm) {
 
 TEST_F(AtenLtcTsTensorTest, TestSlice) {
   torch::Tensor a =
-      torch::rand({32, 24, 16}, torch::TensorOptions(torch::kFloat));
+      torch::rand({32, 24, 16}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::slice(a, 1, 0, 16, 1);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3782,8 +3787,8 @@ TEST_F(AtenLtcTsTensorTest, TestSlice) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestTake) {
-  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::randint(16, {5}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::randint(16, {5}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor c = torch::take(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -3800,16 +3805,16 @@ TEST_F(AtenLtcTsTensorTest, TestTakeBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({4, 4},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true)),
-         torch::randint(16, {5}, torch::TensorOptions(torch::kLong))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true)),
+         torch::randint(16, {5}, torch::TensorOptions(torch::kLong).device(DefaultDevice()))},
         device, testfn);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestStack) {
-  torch::Tensor a = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({2, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = a.dim() + 1;
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor d = torch::stack({a, b, c}, dim);
@@ -3824,9 +3829,9 @@ TEST_F(AtenLtcTsTensorTest, TestStack) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestCat) {
-  torch::Tensor a = torch::rand({2, 1, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 2, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({2, 3, 3}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 1, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({2, 3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int dim : {1, -2}) {
     torch::Tensor d = torch::cat({a, b, c}, dim);
     ForEachDevice([&](const torch::Device& device) {
@@ -3842,7 +3847,7 @@ TEST_F(AtenLtcTsTensorTest, TestCat) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnbind) {
   torch::Tensor input =
-      torch::rand({4, 3, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     std::vector<torch::Tensor> output = torch::unbind(input, dim);
@@ -3863,7 +3868,7 @@ TEST_F(AtenLtcTsTensorTest, TestRepeat) {
   for (const auto& repeats : repeats_list) {
     for (const auto& input_size : input_size_list) {
       torch::Tensor input =
-          torch::rand(input_size, torch::TensorOptions(torch::kFloat));
+          torch::rand(input_size, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor output = input.repeat(repeats);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_input = CopyToDevice(input, device);
@@ -3875,8 +3880,8 @@ TEST_F(AtenLtcTsTensorTest, TestRepeat) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestGather) {
-  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::empty({3, 3}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::empty({3, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       b[i][j] = (i + j) % 3;
@@ -3894,9 +3899,9 @@ TEST_F(AtenLtcTsTensorTest, TestGather) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatter) {
-  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int dim = 0; dim < 2; ++dim) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 5; j++) {
@@ -3915,9 +3920,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatter) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterR1) {
-  torch::Tensor a = torch::rand({5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({2}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   c[0] = 1;
   c[1] = 3;
   torch::Tensor d = torch::scatter(a, 0, c, b);
@@ -3931,9 +3936,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatterR1) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterR3) {
-  torch::Tensor a = torch::rand({3, 5, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 4, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 4, 2}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({3, 5, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 4, 2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 4; j++) {
       for (int k = 0; k < 2; k++) {
@@ -3952,9 +3957,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatterR3) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterBiggerSource) {
-  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({8, 8}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
       c[i][j] = (i + j) % 4;
@@ -3973,9 +3978,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatterBiggerSource) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterScalar) {
-  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar b = 1.0f;
-  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong));
+  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
       c[i][j] = (i + j) % 4;
@@ -3993,9 +3998,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatterScalar) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterReduceAdd) {
-  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int dim = 0; dim < 2; ++dim) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 5; j++) {
@@ -4017,9 +4022,9 @@ TEST_F(AtenLtcTsTensorTest, TestScatterReduceAdd) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterAdd) {
-  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong));
+  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 5}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int dim = 0; dim < 2; ++dim) {
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 5; j++) {
@@ -4038,8 +4043,8 @@ TEST_F(AtenLtcTsTensorTest, TestScatterAdd) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestScatterAddInPlace) {
-  torch::Tensor b = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong));
+  torch::Tensor b = torch::rand({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({4, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
       c[i][j] = (i + j) % 4;
@@ -4048,7 +4053,7 @@ TEST_F(AtenLtcTsTensorTest, TestScatterAddInPlace) {
   for (int dim = 0; dim < 2; ++dim) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor a =
-          torch::rand({4, 4}, torch::TensorOptions(torch::kFloat));
+          torch::rand({4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_a = CopyToDevice(a, device);
       torch::Tensor d = a.scatter_add_(dim, c, b);
       torch::Tensor xla_b = CopyToDevice(b, device);
@@ -4066,11 +4071,11 @@ TEST_F(AtenLtcTsTensorTest, TestIndexSelect) {
         torch::kLong}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (torch::ScalarType index_scalar_type : {torch::kInt, torch::kLong}) {
       torch::Tensor b =
-          torch::empty({2}, torch::TensorOptions(index_scalar_type));
+          torch::empty({2}, torch::TensorOptions(index_scalar_type).device(DefaultDevice()));
       b[0] = 0;
       b[1] = 2;
       for (auto offset : {-2, 0}) {
@@ -4095,10 +4100,10 @@ TEST_F(AtenLtcTsTensorTest, TestIndexSelectRank0) {
         torch::kLong}) {
     torch::Tensor a =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor b =
-        torch::scalar_tensor(2, torch::TensorOptions(torch::kLong));
+        torch::scalar_tensor(2, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor c0 = torch::index_select(a, 0, b);
     torch::Tensor c1 = torch::index_select(a, 1, b);
     ForEachDevice([&](const torch::Device& device) {
@@ -4113,7 +4118,7 @@ TEST_F(AtenLtcTsTensorTest, TestIndexSelectRank0) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestInverse) {
-  torch::Tensor a = torch::randn({5, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({5, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::inverse(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4124,7 +4129,7 @@ TEST_F(AtenLtcTsTensorTest, TestInverse) {
 
 TEST_F(AtenLtcTsTensorTest, TestIsnan) {
   torch::Tensor a = torch::tensor({1.0, 2.0, std::nan("1"), 4.0},
-                                  torch::TensorOptions(torch::kFloat));
+                                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::isnan(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4136,7 +4141,7 @@ TEST_F(AtenLtcTsTensorTest, TestIsnan) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestExpand) {
-  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.expand({2, 3, 4}, /*implicit=*/false);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4146,7 +4151,7 @@ TEST_F(AtenLtcTsTensorTest, TestExpand) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestExpandBack) {
-  torch::Tensor a = torch::rand({3, 1}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = a.expand({3, 4}, /*implicit=*/false);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4156,8 +4161,8 @@ TEST_F(AtenLtcTsTensorTest, TestExpandBack) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestExpandAs) {
-  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor c = torch::native::expand_as(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4170,7 +4175,7 @@ TEST_F(AtenLtcTsTensorTest, TestExpandAs) {
 TEST_F(AtenLtcTsTensorTest, TestEye) {
   int n = 5;
   ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor out = torch::eye(n, torch::TensorOptions(torch::kFloat));
+    torch::Tensor out = torch::eye(n, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_out =
         torch::eye(n, torch::TensorOptions(torch::kFloat).device(device));
     AllClose(out, xla_out);
@@ -4182,7 +4187,7 @@ TEST_F(AtenLtcTsTensorTest, TestEyeWide) {
   int cols = 5;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor out =
-        torch::eye(lines, cols, torch::TensorOptions(torch::kFloat));
+        torch::eye(lines, cols, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_out = torch::eye(
         lines, cols, torch::TensorOptions(torch::kFloat).device(device));
     AllClose(out, xla_out);
@@ -4194,7 +4199,7 @@ TEST_F(AtenLtcTsTensorTest, TestEyeNarrow) {
   int cols = 3;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor out =
-        torch::eye(lines, cols, torch::TensorOptions(torch::kFloat));
+        torch::eye(lines, cols, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_out = torch::eye(
         lines, cols, torch::TensorOptions(torch::kFloat).device(device));
     AllClose(out, xla_out);
@@ -4202,8 +4207,8 @@ TEST_F(AtenLtcTsTensorTest, TestEyeNarrow) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestBroadcastTensors) {
-  torch::Tensor a = torch::rand({2, 1, 1}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2, 1}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 1, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<torch::Tensor> c = torch::broadcast_tensors({a, b});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4222,11 +4227,11 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndex) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result = torch::index(params, {indices});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_params = CopyToDevice(params, device);
@@ -4243,11 +4248,11 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexTransfer) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result = torch::index(params, {indices});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_params = CopyToDevice(params, device);
@@ -4258,7 +4263,7 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexTransfer) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestNonzero) {
-  torch::Tensor a = torch::zeros({4, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::zeros({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   a[0][1] = 1.0;
   a[1][0] = 2.0;
   a[3][1] = 3.0;
@@ -4277,9 +4282,9 @@ TEST_F(AtenLtcTsTensorTest, TestNonzero) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMaskedSelect) {
-  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b =
-      torch::randint(0, 2, {5}, torch::TensorOptions(torch::kBool));
+      torch::randint(0, 2, {5}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
   torch::Tensor c = torch::masked_select(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4297,10 +4302,10 @@ TEST_F(AtenLtcTsTensorTest, TestMaskedSelect) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMaskedScatter) {
-  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b =
-      torch::randint(0, 2, {3, 5}, torch::TensorOptions(torch::kBool));
-  torch::Tensor c = torch::rand({15}, torch::TensorOptions(torch::kFloat));
+      torch::randint(0, 2, {3, 5}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({15}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor d = torch::masked_scatter(a, b, c);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -4324,14 +4329,14 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexHeadNull) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices_null;
     torch::Tensor indices_0 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor indices_1 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result =
         torch::index(params, {indices_null, indices_0, indices_1});
     ForEachDevice([&](const torch::Device& device) {
@@ -4351,14 +4356,14 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexMiddleNull) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices_0 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor indices_null;
     torch::Tensor indices_1 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result =
         torch::index(params, {indices_0, indices_null, indices_1});
     ForEachDevice([&](const torch::Device& device) {
@@ -4378,14 +4383,14 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexTailNull) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices_0 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor indices_null;
     torch::Tensor indices_1 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result =
         torch::index(params, {indices_0, indices_1, indices_null});
     ForEachDevice([&](const torch::Device& device) {
@@ -4405,13 +4410,13 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexMiddleBroadcast) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices_0 =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor indices_1 =
-        torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result = torch::index(params, {indices_0, indices_1});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_params = CopyToDevice(params, device);
@@ -4430,13 +4435,13 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexTailBroadcast) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices_0 =
-        torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor indices_1 =
-        torch::randint(-3, 3, {2, 1}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 1}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor result = torch::index(params, {indices_0, indices_1});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_params = CopyToDevice(params, device);
@@ -4455,10 +4460,10 @@ TEST_F(AtenLtcTsTensorTest, TestMaskIndex) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({2, 2}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {2, 2}, torch::TensorOptions(scalar_type));
+            ? torch::rand({2, 2}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {2, 2}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices =
-        torch::randint(0, 2, {2, 2}, torch::TensorOptions(torch::kBool));
+        torch::randint(0, 2, {2, 2}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
     torch::Tensor result = torch::index(params, {indices});
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_params = CopyToDevice(params, device);
@@ -4475,16 +4480,16 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexPut) {
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor indices =
-        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+        torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
     torch::Tensor values =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4505,12 +4510,12 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexPut) {
 
 TEST_F(AtenLtcTsTensorTest, TestOneIndexPutInPlace) {
   torch::Tensor indices =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor values =
-        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4519,9 +4524,9 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexPutInPlace) {
         torch::Tensor params =
             isFloatingType(scalar_type)
                 ? torch::rand({4, 3, 5, 6, 7},
-                              torch::TensorOptions(scalar_type))
+                              torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {4, 3, 5, 6, 7},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_params = CopyToDevice(params.clone(), device);
         torch::Tensor result =
             torch::index_put_(params, {indices}, values, accumulate);
@@ -4538,17 +4543,17 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexPutInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestOneIndexPutTransfer) {
   torch::Tensor indices =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4568,19 +4573,19 @@ TEST_F(AtenLtcTsTensorTest, TestOneIndexPutTransfer) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPut) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4602,20 +4607,20 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPut) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutHeadNull) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_null;
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 3, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4638,20 +4643,20 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutHeadNull) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutMiddleNull) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_null;
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 3, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4674,20 +4679,20 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutMiddleNull) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutTailNull) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_null;
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 3, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4710,19 +4715,19 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutTailNull) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutMiddleBroadcast) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4744,19 +4749,19 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutMiddleBroadcast) {
 
 TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutTailBroadcast) {
   torch::Tensor indices_0 =
-      torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 1, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor indices_1 =
-      torch::randint(-3, 3, {2, 1}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 1}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type))
+            ? torch::rand({4, 3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
             : torch::randint(100, {4, 3, 5, 6, 7},
-                             torch::TensorOptions(scalar_type));
+                             torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor values =
-        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4778,16 +4783,16 @@ TEST_F(AtenLtcTsTensorTest, TestMultiIndexPutTailBroadcast) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaskIndexPut) {
   torch::Tensor indices =
-      torch::tensor({0, 1}, torch::TensorOptions(torch::kByte))
+      torch::tensor({0, 1}, torch::TensorOptions(torch::kByte).device(DefaultDevice()))
           .to(torch::kBool);
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor params =
         isFloatingType(scalar_type)
-            ? torch::rand({2, 2}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {2, 2}, torch::TensorOptions(scalar_type));
-    torch::Tensor values = torch::ones({2}, torch::TensorOptions(scalar_type));
+            ? torch::rand({2, 2}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {2, 2}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
+    torch::Tensor values = torch::ones({2}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       torch::Tensor result =
           torch::index_put(params, {indices}, values, accumulate);
@@ -4805,12 +4810,12 @@ TEST_F(AtenLtcTsTensorTest, TestMaskIndexPut) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexPutImpl) {
   torch::Tensor indices =
-      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong));
+      torch::randint(-3, 3, {2, 4, 3}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor values =
-        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type));
+        torch::ones({3, 5, 6, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     for (bool accumulate : {false, true}) {
       if (accumulate && IsCuda()) {
         GTEST_SKIP();
@@ -4819,9 +4824,9 @@ TEST_F(AtenLtcTsTensorTest, TestIndexPutImpl) {
         torch::Tensor params =
             isFloatingType(scalar_type)
                 ? torch::rand({4, 3, 5, 6, 7},
-                              torch::TensorOptions(scalar_type))
+                              torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {4, 3, 5, 6, 7},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_params = CopyToDevice(params.clone(), device);
         torch::Tensor result = torch::_index_put_impl_(
             params, {indices}, values, accumulate, /*unsafe=*/true);
@@ -4838,15 +4843,15 @@ TEST_F(AtenLtcTsTensorTest, TestIndexPutImpl) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexFillWithScalar) {
   torch::Tensor index =
-      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong));
+      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Scalar value = 42;
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor result = torch::index_fill(base, dim, index, value);
@@ -4863,7 +4868,7 @@ TEST_F(AtenLtcTsTensorTest, TestIndexFillWithScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexFillWithScalarInPlace) {
   torch::Tensor index =
-      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong));
+      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Scalar value = 42;
   int rank = 3;
   for (torch::ScalarType scalar_type :
@@ -4873,9 +4878,9 @@ TEST_F(AtenLtcTsTensorTest, TestIndexFillWithScalarInPlace) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor base =
             isFloatingType(scalar_type)
-                ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type))
+                ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {3, 4, 5},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_base = CopyToDevice(base.clone(), device);
         torch::Tensor result = base.index_fill_(dim, index, value);
         torch::Tensor xla_index = CopyToDevice(index, device);
@@ -4889,16 +4894,16 @@ TEST_F(AtenLtcTsTensorTest, TestIndexFillWithScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexFillWithTensor) {
   torch::Tensor index =
-      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong));
+      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor value =
-        torch::scalar_tensor(42, torch::TensorOptions(scalar_type));
+        torch::scalar_tensor(42, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor result = torch::index_fill(base, dim, index, value);
@@ -4916,20 +4921,20 @@ TEST_F(AtenLtcTsTensorTest, TestIndexFillWithTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexFillWithTensorInPlace) {
   torch::Tensor index =
-      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong));
+      torch::tensor({0, 2}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor value =
-        torch::scalar_tensor(42, torch::TensorOptions(scalar_type));
+        torch::scalar_tensor(42, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = 3;
     for (int dim = -rank; dim < rank; ++dim) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor base =
             isFloatingType(scalar_type)
-                ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type))
+                ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {3, 4, 5},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_base = CopyToDevice(base.clone(), device);
         torch::Tensor result = base.index_fill_(dim, index, value);
         torch::Tensor xla_index = CopyToDevice(index, device);
@@ -4945,16 +4950,16 @@ TEST_F(AtenLtcTsTensorTest, TestIndexFillWithTensorInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestIndexFillRank0) {
   torch::Tensor index =
-      torch::scalar_tensor(2, torch::TensorOptions(torch::kLong));
+      torch::scalar_tensor(2, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   for (torch::ScalarType scalar_type :
        {torch::kFloat, torch::kByte, torch::kChar, torch::kShort, torch::kInt,
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type));
+            ? torch::rand({3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {3, 4, 5}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     torch::Tensor value =
-        torch::scalar_tensor(42, torch::TensorOptions(scalar_type));
+        torch::scalar_tensor(42, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor result = torch::index_fill(base, dim, index, value);
@@ -4977,23 +4982,23 @@ TEST_F(AtenLtcTsTensorTest, TestIndexAdd) {
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type));
+            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       for (torch::ScalarType index_scalar_type : {torch::kInt, torch::kLong}) {
         torch::Tensor index =
             torch::randint(0, base.size(dim), {index_size},
-                           torch::TensorOptions(index_scalar_type));
+                           torch::TensorOptions(index_scalar_type).device(DefaultDevice()));
         std::vector<int64_t> value_sizes(base.sizes().begin(),
                                          base.sizes().end());
         int canonical_dim = dim < 0 ? dim + rank : dim;
         value_sizes[canonical_dim] = index_size;
         torch::Tensor value =
             isFloatingType(scalar_type)
-                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type))
+                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, value_sizes,
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor result = torch::index_add(base, dim, index, value);
         ForEachDevice([&](const torch::Device& device) {
           torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5018,21 +5023,21 @@ TEST_F(AtenLtcTsTensorTest, TestIndexAddInPlace) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor base =
             isFloatingType(scalar_type)
-                ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
+                ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {5, 3, 7},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor index =
             torch::randint(0, base.size(dim), {index_size},
-                           torch::TensorOptions(torch::kLong));
+                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         std::vector<int64_t> value_sizes(base.sizes().begin(),
                                          base.sizes().end());
         int canonical_dim = dim < 0 ? dim + rank : dim;
         value_sizes[canonical_dim] = index_size;
         torch::Tensor value =
             isFloatingType(scalar_type)
-                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type))
+                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, value_sizes,
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_base = CopyToDevice(base.clone(), device);
         torch::Tensor result = base.index_add_(dim, index, value);
         torch::Tensor xla_index = CopyToDevice(index, device);
@@ -5052,21 +5057,21 @@ TEST_F(AtenLtcTsTensorTest, TestIndexAddRank0) {
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type));
+            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor index = torch::randint(0, base.size(dim), at::IntArrayRef{},
-                                           torch::TensorOptions(torch::kLong));
+                                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
       std::vector<int64_t> value_sizes(base.sizes().begin(),
                                        base.sizes().end());
       int canonical_dim = dim < 0 ? dim + rank : dim;
       value_sizes[canonical_dim] = 1;
       torch::Tensor value =
           isFloatingType(scalar_type)
-              ? torch::rand(value_sizes, torch::TensorOptions(scalar_type))
+              ? torch::rand(value_sizes, torch::TensorOptions(scalar_type).device(DefaultDevice()))
               : torch::randint(100, value_sizes,
-                               torch::TensorOptions(scalar_type));
+                               torch::TensorOptions(scalar_type).device(DefaultDevice()));
       torch::Tensor result = torch::index_add(base, dim, index, value);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5086,17 +5091,17 @@ TEST_F(AtenLtcTsTensorTest, TestIndexCopy) {
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type));
+            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor index =
-          torch::randperm(base.size(dim), torch::TensorOptions(torch::kLong));
+          torch::randperm(base.size(dim), torch::TensorOptions(torch::kLong).device(DefaultDevice()));
       torch::Tensor value =
           isFloatingType(scalar_type)
-              ? torch::rand(base.sizes(), torch::TensorOptions(scalar_type))
+              ? torch::rand(base.sizes(), torch::TensorOptions(scalar_type).device(DefaultDevice()))
               : torch::randint(100, base.sizes(),
-                               torch::TensorOptions(scalar_type));
+                               torch::TensorOptions(scalar_type).device(DefaultDevice()));
       torch::Tensor result = torch::index_copy(base, dim, index, value);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5123,21 +5128,21 @@ TEST_F(AtenLtcTsTensorTest, TestIndexCopyInPlace) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor base =
             isFloatingType(scalar_type)
-                ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
+                ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, {5, 3, 7},
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor index =
             torch::randint(0, base.size(dim), {index_size},
-                           torch::TensorOptions(torch::kLong));
+                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         std::vector<int64_t> value_sizes(base.sizes().begin(),
                                          base.sizes().end());
         int canonical_dim = dim < 0 ? dim + rank : dim;
         value_sizes[canonical_dim] = index_size;
         torch::Tensor value =
             isFloatingType(scalar_type)
-                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type))
+                ? torch::rand(value_sizes, torch::TensorOptions(scalar_type).device(DefaultDevice()))
                 : torch::randint(100, value_sizes,
-                                 torch::TensorOptions(scalar_type));
+                                 torch::TensorOptions(scalar_type).device(DefaultDevice()));
         torch::Tensor xla_base = CopyToDevice(base.clone(), device);
         torch::Tensor result = base.index_copy_(dim, index, value);
         torch::Tensor xla_index = CopyToDevice(index, device);
@@ -5157,21 +5162,21 @@ TEST_F(AtenLtcTsTensorTest, TestIndexCopyRank0) {
         torch::kLong}) {
     torch::Tensor base =
         isFloatingType(scalar_type)
-            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type))
-            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type));
+            ? torch::rand({5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()))
+            : torch::randint(100, {5, 3, 7}, torch::TensorOptions(scalar_type).device(DefaultDevice()));
     int rank = base.dim();
     for (int dim = -rank; dim < rank; ++dim) {
       torch::Tensor index = torch::randint(0, base.size(dim), at::IntArrayRef{},
-                                           torch::TensorOptions(torch::kLong));
+                                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
       std::vector<int64_t> value_sizes(base.sizes().begin(),
                                        base.sizes().end());
       int canonical_dim = dim < 0 ? dim + rank : dim;
       value_sizes[canonical_dim] = 1;
       torch::Tensor value =
           isFloatingType(scalar_type)
-              ? torch::rand(value_sizes, torch::TensorOptions(scalar_type))
+              ? torch::rand(value_sizes, torch::TensorOptions(scalar_type).device(DefaultDevice()))
               : torch::randint(100, value_sizes,
-                               torch::TensorOptions(scalar_type));
+                               torch::TensorOptions(scalar_type).device(DefaultDevice()));
       torch::Tensor result = torch::index_copy(base, dim, index, value);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5187,7 +5192,7 @@ TEST_F(AtenLtcTsTensorTest, TestIndexCopyRank0) {
 
 TEST_F(AtenLtcTsTensorTest, TestRelu) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::relu(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5198,7 +5203,7 @@ TEST_F(AtenLtcTsTensorTest, TestRelu) {
 
 TEST_F(AtenLtcTsTensorTest, TestReluInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = torch::relu_(input);
@@ -5209,7 +5214,7 @@ TEST_F(AtenLtcTsTensorTest, TestReluInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestHardshrink) {
-  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::hardshrink(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5219,7 +5224,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardshrink) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestHardSigmoid) {
-  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::hardsigmoid(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5231,7 +5236,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardSigmoid) {
 TEST_F(AtenLtcTsTensorTest, TestHardSigmoidInPlace) {
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor input =
-        torch::randn({10}, torch::TensorOptions(torch::kFloat));
+        torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = torch::hardsigmoid_(input);
     torch::Tensor xla_output = torch::hardsigmoid_(xla_input);
@@ -5247,13 +5252,13 @@ TEST_F(AtenLtcTsTensorTest, TestHardSigmoidBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::randn({10},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSoftshrink) {
-  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::softshrink(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5263,7 +5268,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftshrink) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestHardtanh) {
-  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::hardtanh(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5273,7 +5278,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardtanh) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestHardtanhInPlace) {
-  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::randn({10}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = torch::hardtanh_(input);
@@ -5285,7 +5290,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardtanhInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestLeakyRelu) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double negative_slope = 0.01;
   torch::Tensor output = torch::leaky_relu(input, negative_slope);
   ForEachDevice([&](const torch::Device& device) {
@@ -5297,7 +5302,7 @@ TEST_F(AtenLtcTsTensorTest, TestLeakyRelu) {
 
 TEST_F(AtenLtcTsTensorTest, TestLeakyReluInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double negative_slope = 0.01;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5309,7 +5314,7 @@ TEST_F(AtenLtcTsTensorTest, TestLeakyReluInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestExp) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::exp(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5319,7 +5324,7 @@ TEST_F(AtenLtcTsTensorTest, TestExp) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestExpm1) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::expm1(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5329,7 +5334,7 @@ TEST_F(AtenLtcTsTensorTest, TestExpm1) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLog) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::log(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5339,7 +5344,7 @@ TEST_F(AtenLtcTsTensorTest, TestLog) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLog2) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::log2(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5349,7 +5354,7 @@ TEST_F(AtenLtcTsTensorTest, TestLog2) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLog10) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::log10(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5359,7 +5364,7 @@ TEST_F(AtenLtcTsTensorTest, TestLog10) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestLog1p) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::log1p(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5369,7 +5374,7 @@ TEST_F(AtenLtcTsTensorTest, TestLog1p) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestErf) {
-  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::erf(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5379,7 +5384,7 @@ TEST_F(AtenLtcTsTensorTest, TestErf) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestErfc) {
-  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::erfc(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5389,7 +5394,7 @@ TEST_F(AtenLtcTsTensorTest, TestErfc) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestErfinv) {
-  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::erfinv(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5400,7 +5405,7 @@ TEST_F(AtenLtcTsTensorTest, TestErfinv) {
 
 TEST_F(AtenLtcTsTensorTest, TestSqrt) {
   torch::Tensor a =
-      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)));
+      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
   torch::Tensor b = torch::sqrt(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5411,7 +5416,7 @@ TEST_F(AtenLtcTsTensorTest, TestSqrt) {
 
 TEST_F(AtenLtcTsTensorTest, TestRsqrt) {
   torch::Tensor a =
-      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)));
+      torch::abs(torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
   torch::Tensor b = torch::rsqrt(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5421,7 +5426,7 @@ TEST_F(AtenLtcTsTensorTest, TestRsqrt) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestReciprocal) {
-  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor b = torch::reciprocal(a);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5431,7 +5436,7 @@ TEST_F(AtenLtcTsTensorTest, TestReciprocal) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestPowTensorScalar) {
-  torch::Tensor base = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor base = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar exponent = 4.09;
   torch::Tensor result = torch::pow(base, exponent);
   ForEachDevice([&](const torch::Device& device) {
@@ -5442,7 +5447,7 @@ TEST_F(AtenLtcTsTensorTest, TestPowTensorScalar) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestPowTensorScalarInPlace) {
-  torch::Tensor base = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor base = torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar exponent = 4.09;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_base = CopyToDevice(base.clone(), device);
@@ -5455,8 +5460,8 @@ TEST_F(AtenLtcTsTensorTest, TestPowTensorScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestPowTensorTensor) {
   torch::Tensor base =
-      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat)));
-  torch::Tensor exponent = torch::rand({4, 2});
+      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
+  torch::Tensor exponent = torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::pow(base, exponent);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5468,8 +5473,8 @@ TEST_F(AtenLtcTsTensorTest, TestPowTensorTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestPowTensorTensorInPlace) {
   torch::Tensor base =
-      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat)));
-  torch::Tensor exponent = torch::rand({4, 2});
+      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
+  torch::Tensor exponent = torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_base = CopyToDevice(base.clone(), device);
     torch::Tensor result = base.pow_(exponent);
@@ -5482,8 +5487,8 @@ TEST_F(AtenLtcTsTensorTest, TestPowTensorTensorInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestPowTensorTensorBroadcast) {
   torch::Tensor base =
-      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat)));
-  torch::Tensor exponent = torch::rand({4, 1});
+      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
+  torch::Tensor exponent = torch::rand({4, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::pow(base, exponent);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_base = CopyToDevice(base, device);
@@ -5506,7 +5511,7 @@ TEST_F(AtenLtcTsTensorTest, TestPowScalarTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestPowIntExponent) {
   torch::Tensor base =
-      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat)));
+      torch::abs(torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())));
   torch::Scalar exponent = 3;
   torch::Tensor result = torch::pow(base, exponent);
   ForEachDevice([&](const torch::Device& device) {
@@ -5518,7 +5523,7 @@ TEST_F(AtenLtcTsTensorTest, TestPowIntExponent) {
 
 TEST_F(AtenLtcTsTensorTest, TestFmodScalar) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Scalar divisor = 2.0;
   torch::Tensor b = torch::fmod(a, divisor);
   ForEachDevice([&](const torch::Device& device) {
@@ -5532,7 +5537,7 @@ TEST_F(AtenLtcTsTensorTest, TestFmodScalarInPlace) {
   torch::Scalar divisor = 2.0;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor a =
-        torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+        torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor b = a.fmod_(divisor);
     torch::Tensor xla_b = xla_a.fmod_(divisor);
@@ -5543,9 +5548,9 @@ TEST_F(AtenLtcTsTensorTest, TestFmodScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestFmodTensor) {
   torch::Tensor a =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 10.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 10.0;
   torch::Tensor c = torch::fmod(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5557,10 +5562,10 @@ TEST_F(AtenLtcTsTensorTest, TestFmodTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestFmodTensorInPlace) {
   torch::Tensor b =
-      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 10.0;
+      torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 10.0;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor a =
-        torch::rand({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+        torch::rand({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor c = a.fmod_(b);
     torch::Tensor xla_b = CopyToDevice(b, device);
@@ -5572,7 +5577,7 @@ TEST_F(AtenLtcTsTensorTest, TestFmodTensorInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestRemainderScalar) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Scalar divisor = -2.0;
   torch::Tensor b = torch::remainder(a, divisor);
   ForEachDevice([&](const torch::Device& device) {
@@ -5586,7 +5591,7 @@ TEST_F(AtenLtcTsTensorTest, TestRemainderScalarInPlace) {
   torch::Scalar divisor = -2.0;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor a =
-        torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+        torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor b = a.remainder_(divisor);
     torch::Tensor xla_b = xla_a.remainder_(divisor);
@@ -5597,9 +5602,9 @@ TEST_F(AtenLtcTsTensorTest, TestRemainderScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestRemainderTensor) {
   torch::Tensor a =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
   torch::Tensor b =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 10.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 10.0;
   torch::Tensor c = torch::remainder(a, b);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -5611,10 +5616,10 @@ TEST_F(AtenLtcTsTensorTest, TestRemainderTensor) {
 
 TEST_F(AtenLtcTsTensorTest, TestRemainderTensorInPlace) {
   torch::Tensor b =
-      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 10.0;
+      torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 10.0;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor a =
-        torch::randn({2, 2}, torch::TensorOptions(torch::kFloat)) * 100.0;
+        torch::randn({2, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice())) * 100.0;
     torch::Tensor xla_a = CopyToDevice(a, device);
     torch::Tensor c = a.remainder_(b);
     torch::Tensor xla_b = CopyToDevice(b, device);
@@ -5625,9 +5630,9 @@ TEST_F(AtenLtcTsTensorTest, TestRemainderTensorInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestWhere) {
-  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte));
+  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
       c[i][j] = i == j;
@@ -5644,9 +5649,9 @@ TEST_F(AtenLtcTsTensorTest, TestWhere) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestWhereBroadcast) {
-  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::zeros({}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte));
+  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::zeros({}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
       c[i][j] = i == j;
@@ -5663,9 +5668,9 @@ TEST_F(AtenLtcTsTensorTest, TestWhereBroadcast) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestWhereAutograd) {
-  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte));
+  torch::Tensor a = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({3, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::empty({3, 3}, torch::TensorOptions(torch::kByte).device(DefaultDevice()));
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
       c[i][j] = i == j;
@@ -5683,7 +5688,7 @@ TEST_F(AtenLtcTsTensorTest, TestWhereAutograd) {
 
 TEST_F(AtenLtcTsTensorTest, TestThreshold) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   float threshold = 0.4;
   float value = 20;
   torch::Tensor output = torch::threshold(input, threshold, value);
@@ -5704,14 +5709,14 @@ TEST_F(AtenLtcTsTensorTest, TestThresholdBackward) {
 
   ForEachDevice([&](const torch::Device& device) {
     TestBackward({torch::rand({2, 1, 4, 6},
-        torch::TensorOptions(torch::kFloat).requires_grad(true))},
+        torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testFunction);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestThresholdInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = input.clone();
   float threshold = 0.4;
   float value = 20;
@@ -5725,7 +5730,7 @@ TEST_F(AtenLtcTsTensorTest, TestThresholdInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestElu) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 0.5;
   torch::Scalar scale = 2.5;
   torch::Scalar input_scale = 1.5;
@@ -5739,7 +5744,7 @@ TEST_F(AtenLtcTsTensorTest, TestElu) {
 
 TEST_F(AtenLtcTsTensorTest, TestEluInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 0.5;
   torch::Scalar scale = 2.5;
   torch::Scalar input_scale = 1.5;
@@ -5755,7 +5760,7 @@ TEST_F(AtenLtcTsTensorTest, TestEluInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestSelu) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::selu(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5766,7 +5771,7 @@ TEST_F(AtenLtcTsTensorTest, TestSelu) {
 
 TEST_F(AtenLtcTsTensorTest, TestSeluInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = torch::selu_(input);
@@ -5778,7 +5783,7 @@ TEST_F(AtenLtcTsTensorTest, TestSeluInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestCelu) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 2.5;
   torch::Tensor output = torch::celu(input, alpha);
   ForEachDevice([&](const torch::Device& device) {
@@ -5790,7 +5795,7 @@ TEST_F(AtenLtcTsTensorTest, TestCelu) {
 
 TEST_F(AtenLtcTsTensorTest, TestCeluInPlace) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar alpha = 2.5;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5803,7 +5808,7 @@ TEST_F(AtenLtcTsTensorTest, TestCeluInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestGelu) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::gelu(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5817,11 +5822,11 @@ TEST_F(AtenLtcTsTensorTest, TestAddMatMul) {
   int out_channels = 320;
   int labels = 50;
   torch::Tensor input = torch::rand({in_channels, out_channels},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({out_channels, labels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({out_channels, labels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({labels}, torch::TensorOptions(torch::kFloat));
+      torch::rand({labels}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test beta != 1. through the CPU interop.
   for (double beta : {1., 2.}) {
     torch::Tensor output = torch::addmm(bias, input, weight, /*beta=*/beta);
@@ -5837,9 +5842,9 @@ TEST_F(AtenLtcTsTensorTest, TestAddMatMul) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestEmbedding) {
-  torch::Tensor a = torch::rand({32, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({32, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor i =
-      torch::randint(0, 31, {3, 4}, torch::TensorOptions(torch::kLong));
+      torch::randint(0, 31, {3, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor b =
       torch::embedding(a, i, /*padding_idx=*/0, /*scale_grad_by_freq=*/false,
                        /*sparse=*/false);
@@ -5856,7 +5861,7 @@ TEST_F(AtenLtcTsTensorTest, TestEmbedding) {
 TEST_F(AtenLtcTsTensorTest, TestOneHot) {
   int num_classes = 5;
   torch::Tensor input =
-      torch::randint(0, num_classes, {10}, torch::TensorOptions(torch::kLong));
+      torch::randint(0, num_classes, {10}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
   torch::Tensor output = torch::one_hot(input, num_classes);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5867,7 +5872,7 @@ TEST_F(AtenLtcTsTensorTest, TestOneHot) {
 
 TEST_F(AtenLtcTsTensorTest, TestTranspose) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::t(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5878,7 +5883,7 @@ TEST_F(AtenLtcTsTensorTest, TestTranspose) {
 
 TEST_F(AtenLtcTsTensorTest, TestTransposeInPlace) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = input.t_();
@@ -5890,7 +5895,7 @@ TEST_F(AtenLtcTsTensorTest, TestTransposeInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestReshape) {
   torch::Tensor input =
-      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::reshape(input, {-1, 320});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5903,7 +5908,7 @@ TEST_F(AtenLtcTsTensorTest, TestResize) {
   // Testing a resize_() with target size bigger than original size is not
   // possible, as we fill with zeros, while pytorch fills with random garbage.
   torch::Tensor input =
-      torch::rand({2, 2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor saved_input = input.clone();
   input.resize_({3, 3});
   ForEachDevice([&](const torch::Device& device) {
@@ -5915,7 +5920,7 @@ TEST_F(AtenLtcTsTensorTest, TestResize) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewResize) {
   torch::Tensor input =
-      torch::zeros({8, 2}, torch::TensorOptions(torch::kFloat));
+      torch::zeros({8, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor saved_input = input.clone();
   torch::Tensor output = input.view({4, 4});
   output.resize_({3, 3});
@@ -5930,7 +5935,7 @@ TEST_F(AtenLtcTsTensorTest, TestViewResize) {
 
 TEST_F(AtenLtcTsTensorTest, TestView) {
   torch::Tensor input =
-      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = input.view({-1, 320});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -5941,14 +5946,14 @@ TEST_F(AtenLtcTsTensorTest, TestView) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewMod) {
   torch::Tensor input =
-      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = input.view({-1, 320});
   output.add_(one, 1.0);
   input.add_(one, 1.0);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xinput =
-        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(xinput, device);
     torch::Tensor xla_one = CopyToDevice(one, device);
     torch::Tensor xla_output = xla_input.view({-1, 320});
@@ -5961,15 +5966,15 @@ TEST_F(AtenLtcTsTensorTest, TestViewMod) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewModComplex) {
   torch::Tensor input =
-      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output1 = input.view({-1, 320});
   output1.add_(one, 1.0);
   torch::Tensor output2 = input.view({-1, 160});
   output2.add_(one, 1.0);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xinput =
-        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(xinput, device);
     torch::Tensor xla_one = CopyToDevice(one, device);
     torch::Tensor xla_output1 = xla_input.view({-1, 320});
@@ -5983,15 +5988,15 @@ TEST_F(AtenLtcTsTensorTest, TestViewModComplex) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewOfViewMod) {
   torch::Tensor input =
-      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+      torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output1 = input.view({-1, 320});
   output1.add_(one, 1.0);
   torch::Tensor output2 = output1.view({-1, 160});
   output2.add_(one, 1.0);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xinput =
-        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+        torch::zeros({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(xinput, device);
     torch::Tensor xla_one = CopyToDevice(one, device);
     torch::Tensor xla_output1 = xla_input.view({-1, 320});
@@ -6005,10 +6010,10 @@ TEST_F(AtenLtcTsTensorTest, TestViewOfViewMod) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewSqueezeAddInPlace) {
   torch::Tensor input =
-      torch::zeros({2, 3, 1}, torch::TensorOptions(torch::kFloat));
+      torch::zeros({2, 3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> view_size = {2, 3, 1, 1};
   int squeeze_dim = 2;
-  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = input.view(view_size);
@@ -6025,7 +6030,7 @@ TEST_F(AtenLtcTsTensorTest, TestViewSqueezeAddInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnsafeView) {
   torch::Tensor input =
-      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::_unsafe_view(input, {-1, 320});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -6036,7 +6041,7 @@ TEST_F(AtenLtcTsTensorTest, TestUnsafeView) {
 
 TEST_F(AtenLtcTsTensorTest, TestNarrow) {
   torch::Tensor a =
-      torch::rand({8, 10, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({8, 10, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int64_t dim : {1, -3}) {
     for (int64_t start : {2, -8}) {
       torch::Tensor b = a.narrow(dim, start, 6);
@@ -6053,10 +6058,10 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowUpdate) {
   for (int64_t dim : {1, -2}) {
     for (int64_t start : {2, -6}) {
       torch::Tensor a =
-          torch::rand({3, 8, 3}, torch::TensorOptions(torch::kFloat));
+          torch::rand({3, 8, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor a_copy = a.clone();
       torch::Tensor b =
-          torch::rand({3, 4, 3}, torch::TensorOptions(torch::kFloat));
+          torch::rand({3, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor c = a.narrow(dim, start, 4);
       c.add_(b, 1.0);
       ForEachDevice([&](const torch::Device& device) {
@@ -6074,10 +6079,10 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowUpdateBaseCheck) {
   for (int64_t dim : {0, -2}) {
     for (int64_t start : {2, -6}) {
       torch::Tensor a =
-          torch::zeros({8, 3}, torch::TensorOptions(torch::kFloat));
+          torch::zeros({8, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor a_copy = a.clone();
       torch::Tensor b =
-          torch::ones({4, 3}, torch::TensorOptions(torch::kFloat));
+          torch::ones({4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor c = a.narrow(dim, start, 4);
       c.add_(b, 1.0);
       ForEachDevice([&](const torch::Device& device) {
@@ -6096,10 +6101,10 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowUpdateTwoSlices) {
     for (int64_t start0 : {2, -6}) {
       for (int64_t start1 : {6, -2}) {
         torch::Tensor a =
-            torch::zeros({8, 3}, torch::TensorOptions(torch::kFloat));
+            torch::zeros({8, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor a_copy = a.clone();
         torch::Tensor b =
-            torch::ones({2, 3}, torch::TensorOptions(torch::kFloat));
+            torch::ones({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor c = b + 1;
         torch::Tensor d = a.narrow(dim, start0, 2);
         torch::Tensor e = a.narrow(dim, start1, 2);
@@ -6126,10 +6131,10 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowUpdateView) {
   for (int64_t dim : {0, -3}) {
     for (int64_t start : {2, -6}) {
       torch::Tensor a =
-          torch::rand({8, 2, 3}, torch::TensorOptions(torch::kFloat));
+          torch::rand({8, 2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor a_copy = a.clone();
       torch::Tensor b =
-          torch::rand({4, 6}, torch::TensorOptions(torch::kFloat));
+          torch::rand({4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor c = a.narrow(dim, start, 4);
       torch::Tensor d = c.view({4, 6});
       d.add_(b, 1.0);
@@ -6150,10 +6155,10 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowInNarrowUpdate) {
     for (int64_t start0 : {1, -7}) {
       for (int64_t start1 : {1, -5}) {
         torch::Tensor a =
-            torch::rand({3, 8, 3}, torch::TensorOptions(torch::kFloat));
+            torch::rand({3, 8, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor a_copy = a.clone();
         torch::Tensor b =
-            torch::rand({3, 2, 3}, torch::TensorOptions(torch::kFloat));
+            torch::rand({3, 2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor c = a.narrow(dim, start0, 6);
         torch::Tensor d = c.narrow(dim, start1, 2);
         d.add_(b, 1.0);
@@ -6175,7 +6180,7 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowCopy) {
     for (int64_t start : {2, -8}) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor input =
-            torch::rand({8, 10, 4, 4}, torch::TensorOptions(torch::kFloat));
+            torch::rand({8, 10, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor xla_input = CopyToDevice(input, device);
         torch::Tensor result = input.narrow_copy(dim, start, 6);
         input.add_(1);
@@ -6189,7 +6194,7 @@ TEST_F(AtenLtcTsTensorTest, TestNarrowCopy) {
 
 TEST_F(AtenLtcTsTensorTest, TestViewAs) {
   torch::Tensor input =
-      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({32, 20, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor empty = torch::empty({32, 320});
   torch::Tensor output = input.view_as(empty);
   ForEachDevice([&](const torch::Device& device) {
@@ -6202,7 +6207,7 @@ TEST_F(AtenLtcTsTensorTest, TestViewAs) {
 
 TEST_F(AtenLtcTsTensorTest, TestLogSoftmax) {
   torch::Tensor input =
-      torch::rand({5, 3, 4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({5, 3, 4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6216,7 +6221,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSoftmax) {
 
 TEST_F(AtenLtcTsTensorTest, TestLogSoftmaxCast) {
   torch::Tensor input =
-      torch::rand({5, 3, 4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({5, 3, 4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6231,7 +6236,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSoftmaxCast) {
 
 TEST_F(AtenLtcTsTensorTest, TestLogSoftmaxWrapper) {
   torch::Tensor input =
-      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6247,7 +6252,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSoftmaxWrapper) {
 
 TEST_F(AtenLtcTsTensorTest, TestSoftmax) {
   torch::Tensor input =
-      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6261,7 +6266,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftmax) {
 
 TEST_F(AtenLtcTsTensorTest, TestSoftmaxCast) {
   torch::Tensor input =
-      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6275,7 +6280,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftmaxCast) {
 
 TEST_F(AtenLtcTsTensorTest, TestSoftmaxWrapper) {
   torch::Tensor input =
-      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({10, 2, 6, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     int rank = input.dim();
@@ -6291,7 +6296,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftmaxWrapper) {
 
 TEST_F(AtenLtcTsTensorTest, TestSoftplus) {
   torch::Tensor input =
-      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 4, 6}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::softplus(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -6302,7 +6307,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftplus) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool1D) {
   torch::Tensor input =
-      torch::rand({1, 16, 56}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 16, 56}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6334,7 +6339,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool1D) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool2D) {
   torch::Tensor input =
-      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6366,7 +6371,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2D) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool2DWithIndices) {
   torch::Tensor input =
-      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6399,7 +6404,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2DWithIndices) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool2DNonSquare) {
   torch::Tensor input =
-      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 4, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 4;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6432,7 +6437,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2DNonSquare) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool3D) {
   torch::Tensor input =
-      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6465,7 +6470,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3D) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool3DWithIndices) {
   torch::Tensor input =
-      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6500,7 +6505,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DWithIndices) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool3DIncompleteAttributes) {
   torch::Tensor input =
-      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6533,7 +6538,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DIncompleteAttributes) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNonSquare) {
   torch::Tensor input =
-      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 8, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 4;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6567,7 +6572,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNonSquare) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool2DNoBatch) {
   torch::Tensor input =
-      torch::rand({4, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6599,7 +6604,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2DNoBatch) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNoBatch) {
   torch::Tensor input =
-      torch::rand({1, 8, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 8, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 3;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6632,7 +6637,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNoBatch) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool1D) {
   torch::Tensor input =
-      torch::rand({4, 1, 28}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 1, 28}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6663,7 +6668,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool1D) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool2D) {
   torch::Tensor input =
-      torch::rand({2, 1, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6695,7 +6700,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool2D) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool2DNonSquare) {
   torch::Tensor input =
-      torch::rand({2, 1, 14, 14}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 14, 14}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 4;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6726,7 +6731,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool2DNonSquare) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool3D) {
   torch::Tensor input =
-      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6757,7 +6762,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3D) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool3DIncompleteAttributes) {
   torch::Tensor input =
-      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6788,7 +6793,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3DIncompleteAttributes) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool3DNonSquare) {
   torch::Tensor input =
-      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 7, 7, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 4;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6821,7 +6826,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3DNonSquare) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool2DNoBatch) {
   torch::Tensor input =
-      torch::rand({1, 7, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 7, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6852,7 +6857,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool2DNoBatch) {
 
 TEST_F(AtenLtcTsTensorTest, TestAvgPool3DNoBatch) {
   torch::Tensor input =
-      torch::rand({1, 7, 7, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 7, 7, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int kernel_size = 2;
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
@@ -6883,7 +6888,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3DNoBatch) {
 
 TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool2D) {
   torch::Tensor input =
-      torch::rand({4, 1, 28, 28}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 1, 28, 28}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int64_t output_size : {7, 4}) {
     torch::Tensor output =
         torch::adaptive_avg_pool2d(input, {output_size, output_size});
@@ -6898,7 +6903,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool2D) {
 
 TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3D) {
   torch::Tensor input =
-      torch::rand({9, 4, 56, 28, 28}, torch::TensorOptions(torch::kFloat));
+      torch::rand({9, 4, 56, 28, 28}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int64_t output_size : {7, 4}) {
     torch::Tensor output = torch::adaptive_avg_pool3d(
         input, {output_size, output_size, output_size});
@@ -6913,7 +6918,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3D) {
 
 TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3DNoBatch) {
   torch::Tensor input =
-      torch::rand({3, 56, 28, 28}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 56, 28, 28}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int64_t output_size : {7, 4}) {
     torch::Tensor output = torch::adaptive_avg_pool3d(
         input, {output_size, output_size, output_size});
@@ -6928,7 +6933,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3DNoBatch) {
 
 TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool2DNoBatch) {
   torch::Tensor input =
-      torch::rand({1, 56, 56}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 56, 56}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int64_t output_size : {7, 8}) {
     torch::Tensor output =
         torch::adaptive_avg_pool2d(input, {output_size, output_size});
@@ -6944,7 +6949,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool2DNoBatch) {
 TEST_F(AtenLtcTsTensorTest, TestMaxUnpool2D) {
   int kernel_size = 2;
   torch::Tensor input =
-      torch::rand({2, 2, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
       // Test ceil_mode=true through the CPU interop.
@@ -6979,7 +6984,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxUnpool2D) {
 TEST_F(AtenLtcTsTensorTest, TestMaxUnpool3D) {
   int kernel_size = 2;
   torch::Tensor input =
-      torch::rand({1, 1, 4, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
       // Test ceil_mode=true through the CPU interop.
@@ -7024,13 +7029,13 @@ TEST_F(AtenLtcTsTensorTest, TestNllLoss) {
     for (int ignore_index : {-1, 0, 1, 5}) {
       for (bool def_weight : {false, true}) {
         torch::Tensor input =
-            torch::rand({batch, classes}, torch::TensorOptions(dtype));
+            torch::rand({batch, classes}, torch::TensorOptions(dtype).device(DefaultDevice()));
         torch::Tensor target =
             torch::randint(std::min(ignore_index, 0), classes, {batch},
-                           torch::TensorOptions(torch::kLong));
+                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         torch::Tensor weight;
         if (def_weight) {
-          weight = torch::rand({classes}, torch::TensorOptions(dtype));
+          weight = torch::rand({classes}, torch::TensorOptions(dtype).device(DefaultDevice()));
         }
         for (torch::Reduction::Reduction reduction :
              {torch::Reduction::Mean, torch::Reduction::Sum,
@@ -7068,13 +7073,13 @@ TEST_F(AtenLtcTsTensorTest, TestNllLoss2d) {
     for (int ignore_index : {-1, 0, 1, 5}) {
       for (bool def_weight : {false, true}) {
         torch::Tensor input = torch::rand({batch, classes, height, width},
-                                          torch::TensorOptions(dtype));
+                                          torch::TensorOptions(dtype).device(DefaultDevice()));
         torch::Tensor target = torch::randint(
             std::min(ignore_index, 0), classes, {batch, height, width},
-            torch::TensorOptions(torch::kLong));
+            torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         torch::Tensor weight;
         if (def_weight) {
-          weight = torch::rand({classes}, torch::TensorOptions(dtype));
+          weight = torch::rand({classes}, torch::TensorOptions(dtype).device(DefaultDevice()));
         }
         for (torch::Reduction::Reduction reduction :
              {torch::Reduction::Mean, torch::Reduction::Sum,
@@ -7104,9 +7109,9 @@ TEST_F(AtenLtcTsTensorTest, TestNllLoss2d) {
 
 TEST_F(AtenLtcTsTensorTest, TestSmoothL1Loss) {
   torch::Tensor input =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::None, torch::Reduction::Mean,
         torch::Reduction::Sum}) {
@@ -7126,9 +7131,9 @@ TEST_F(AtenLtcTsTensorTest, TestSmoothL1Loss) {
 
 TEST_F(AtenLtcTsTensorTest, TestL1Loss) {
   torch::Tensor input =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::None, torch::Reduction::Mean,
         torch::Reduction::Sum}) {
@@ -7154,8 +7159,8 @@ TEST_F(AtenLtcTsTensorTest, TestL1LossBackward) {
     ForEachDevice([&](const torch::Device& device) {
       TestBackward(
           {torch::rand({2, 4},
-                       torch::TensorOptions(torch::kFloat).requires_grad(true)),
-           torch::rand({2, 4}, torch::TensorOptions(torch::kFloat))},
+                       torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true)),
+           torch::rand({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))},
           device, testfn);
     });
   }
@@ -7163,9 +7168,9 @@ TEST_F(AtenLtcTsTensorTest, TestL1LossBackward) {
 
 TEST_F(AtenLtcTsTensorTest, TestMseLoss) {
   torch::Tensor input =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor target =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::None, torch::Reduction::Mean,
         torch::Reduction::Sum}) {
@@ -7191,8 +7196,8 @@ TEST_F(AtenLtcTsTensorTest, TestMseLossBackward) {
     ForEachDevice([&](const torch::Device& device) {
       TestBackward(
           {torch::rand({2, 4},
-                       torch::TensorOptions(torch::kFloat).requires_grad(true)),
-           torch::rand({2, 4}, torch::TensorOptions(torch::kFloat))},
+                       torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true)),
+           torch::rand({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()))},
           device, testfn);
     });
   }
@@ -7201,15 +7206,15 @@ TEST_F(AtenLtcTsTensorTest, TestMseLossBackward) {
 TEST_F(AtenLtcTsTensorTest, TestBatchNorm1D) {
   int num_features = 3;
   torch::Tensor input =
-      torch::rand({2, num_features, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, num_features, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_mean =
-      torch::zeros({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::zeros({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_var =
-      torch::ones({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::ones({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double momentum = 0.1;
   double eps = 0.5;
   torch::Tensor undef;
@@ -7243,15 +7248,15 @@ TEST_F(AtenLtcTsTensorTest, TestBatchNorm1D) {
 TEST_F(AtenLtcTsTensorTest, TestBatchNorm2D) {
   int num_features = 3;
   torch::Tensor input =
-      torch::rand({2, num_features, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, num_features, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias =
-      torch::rand({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::rand({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_mean =
-      torch::zeros({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::zeros({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor running_var =
-      torch::ones({num_features}, torch::TensorOptions(torch::kFloat));
+      torch::ones({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   double momentum = 0.1;
   double eps = 0.5;
   torch::Tensor undef;
@@ -7284,7 +7289,7 @@ TEST_F(AtenLtcTsTensorTest, TestBatchNorm2D) {
 
 TEST_F(AtenLtcTsTensorTest, TestDim) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
     EXPECT_EQ(input.dim(), xla_input.dim());
@@ -7293,7 +7298,7 @@ TEST_F(AtenLtcTsTensorTest, TestDim) {
 
 TEST_F(AtenLtcTsTensorTest, TestContiguous) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::native::contiguous(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7304,7 +7309,7 @@ TEST_F(AtenLtcTsTensorTest, TestContiguous) {
 
 TEST_F(AtenLtcTsTensorTest, TestSqueezeAll) {
   torch::Tensor input =
-      torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::squeeze(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7316,7 +7321,7 @@ TEST_F(AtenLtcTsTensorTest, TestSqueezeAll) {
 TEST_F(AtenLtcTsTensorTest, TestSqueezeAllInPlace) {
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor input =
-        torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat));
+        torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor output = input.squeeze_();
     torch::Tensor xla_output = xla_input.squeeze_();
@@ -7331,7 +7336,7 @@ TEST_F(AtenLtcTsTensorTest, TestSqueezeAllInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestSqueezeOne) {
   torch::Tensor input =
-      torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor output = torch::squeeze(input, dim);
@@ -7348,7 +7353,7 @@ TEST_F(AtenLtcTsTensorTest, TestSqueezeOneInPlace) {
   for (int dim = -rank; dim < rank; ++dim) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor input =
-          torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat));
+          torch::rand({2, 1, 3, 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_input = CopyToDevice(input, device);
       torch::Tensor output = input.squeeze_(dim);
       torch::Tensor xla_output = xla_input.squeeze_(dim);
@@ -7364,7 +7369,7 @@ TEST_F(AtenLtcTsTensorTest, TestSqueezeOneInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnsqueeze) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim() + 1;
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor output = torch::unsqueeze(input, dim);
@@ -7378,7 +7383,7 @@ TEST_F(AtenLtcTsTensorTest, TestUnsqueeze) {
 
 TEST_F(AtenLtcTsTensorTest, TestUnsqueezeInPlace) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim() + 1;
   for (int dim = -rank; dim < rank; ++dim) {
     ForEachDevice([&](const torch::Device& device) {
@@ -7397,9 +7402,9 @@ TEST_F(AtenLtcTsTensorTest, TestUnsqueezeInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaskedFill) {
   torch::Tensor input =
-      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor mask =
-      torch::randint(0, 2, {2, 3}, torch::TensorOptions(torch::kBool));
+      torch::randint(0, 2, {2, 3}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
   torch::Scalar value(42);
   torch::Tensor result = torch::masked_fill(input, mask, value);
   ForEachDevice([&](const torch::Device& device) {
@@ -7413,10 +7418,10 @@ TEST_F(AtenLtcTsTensorTest, TestMaskedFill) {
 TEST_F(AtenLtcTsTensorTest, TestMaskedFillInPlace) {
   torch::Scalar value(42);
   torch::Tensor mask =
-      torch::randint(0, 2, {2, 3}, torch::TensorOptions(torch::kBool));
+      torch::randint(0, 2, {2, 3}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor input =
-        torch::rand({2, 3}, torch::TensorOptions(torch::kFloat));
+        torch::rand({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor xla_mask = CopyToDevice(mask, device);
     torch::Tensor result = input.masked_fill_(mask, value);
@@ -7428,9 +7433,9 @@ TEST_F(AtenLtcTsTensorTest, TestMaskedFillInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestMaskedFillBroadcast) {
   torch::Tensor input =
-      torch::rand({2, 5, 4, 3}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 5, 4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor mask =
-      torch::randint(0, 2, {4, 1}, torch::TensorOptions(torch::kBool));
+      torch::randint(0, 2, {4, 1}, torch::TensorOptions(torch::kBool).device(DefaultDevice()));
   torch::Scalar value(42);
   torch::Tensor result = torch::masked_fill(input, mask, value);
   ForEachDevice([&](const torch::Device& device) {
@@ -7445,7 +7450,7 @@ TEST_F(AtenLtcTsTensorTest, TestFill) {
   torch::Scalar value(42);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor input =
-        torch::empty({2, 3}, torch::TensorOptions(torch::kFloat));
+        torch::empty({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor result = torch::fill_(input, value);
     torch::Tensor xla_result = torch::fill_(xla_input, value);
@@ -7458,7 +7463,7 @@ TEST_F(AtenLtcTsTensorTest, TestFillWithRank0) {
   torch::Tensor value = torch::scalar_tensor(42);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor input =
-        torch::empty({2, 3}, torch::TensorOptions(torch::kFloat));
+        torch::empty({2, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(input, device);
     torch::Tensor result = torch::fill_(input, value);
     torch::Tensor xla_value = CopyToDevice(value, device);
@@ -7470,7 +7475,7 @@ TEST_F(AtenLtcTsTensorTest, TestFillWithRank0) {
 
 TEST_F(AtenLtcTsTensorTest, TestPermute) {
   torch::Tensor input =
-      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<std::vector<int64_t>> dims_permutations = {
       {0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
   int rank = input.dim();
@@ -7502,15 +7507,15 @@ TEST_F(AtenLtcTsTensorTest, TestPermuteMod) {
                       [rank](int64_t& dim) { dim -= rank; });
       }
       torch::Tensor input =
-          torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat));
+          torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor one =
-          torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+          torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor output = input.permute(dims_permutation);
       output.add_(one, 1.0);
       input.add_(one, 1.0);
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor xinput =
-            torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat));
+            torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor xla_input = CopyToDevice(xinput, device);
         torch::Tensor xla_one = CopyToDevice(one, device);
         torch::Tensor xla_output = xla_input.permute(dims_permutation);
@@ -7525,7 +7530,7 @@ TEST_F(AtenLtcTsTensorTest, TestPermuteMod) {
 
 TEST_F(AtenLtcTsTensorTest, TestFlip) {
   torch::Tensor input =
-      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<std::vector<int64_t>> dim_powerset = {
       {0}, {1}, {2}, {0, 1}, {1, 2}, {2, 0}, {0, 1, 2}};
   for (std::vector<int64_t> flip_dims : dim_powerset) {
@@ -7546,7 +7551,7 @@ TEST_F(AtenLtcTsTensorTest, TestFlip) {
 
 TEST_F(AtenLtcTsTensorTest, TestPixelShuffle) {
   torch::Tensor input =
-      torch::rand({5, 18, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({5, 18, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int upscale_factor = 3;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7558,7 +7563,7 @@ TEST_F(AtenLtcTsTensorTest, TestPixelShuffle) {
 
 TEST_F(AtenLtcTsTensorTest, TestSumToSize) {
   torch::Tensor input =
-      torch::rand({4, 6, 3, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 6, 3, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> out_size = {4, 1, 1, 7};
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7570,7 +7575,7 @@ TEST_F(AtenLtcTsTensorTest, TestSumToSize) {
 
 TEST_F(AtenLtcTsTensorTest, TestTransposeDims) {
   torch::Tensor input =
-      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int dim0 = 0;
   int dim1 = 2;
   torch::Tensor output = torch::transpose(input, dim0, dim1);
@@ -7586,14 +7591,14 @@ TEST_F(AtenLtcTsTensorTest, TestTransposeDimsMod) {
   int dim0 = 0;
   int dim1 = 2;
   torch::Tensor input =
-      torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat));
-  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat));
+      torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor one = torch::tensor(1.0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::transpose(input, dim0, dim1);
   output.add_(one, 1.0);
   input.add_(one, 1.0);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xinput =
-        torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat));
+        torch::zeros(input_sizes, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor xla_input = CopyToDevice(xinput, device);
     torch::Tensor xla_one = CopyToDevice(one, device);
     torch::Tensor xla_output = torch::transpose(xla_input, dim0, dim1);
@@ -7606,7 +7611,7 @@ TEST_F(AtenLtcTsTensorTest, TestTransposeDimsMod) {
 
 TEST_F(AtenLtcTsTensorTest, TestTransposeDimsInPlace) {
   torch::Tensor input =
-      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int dim0 = 0;
   int dim1 = 2;
   ForEachDevice([&](const torch::Device& device) {
@@ -7620,7 +7625,7 @@ TEST_F(AtenLtcTsTensorTest, TestTransposeDimsInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestSplit) {
   torch::Tensor input =
-      torch::rand({7, 8, 9}, torch::TensorOptions(torch::kFloat));
+      torch::rand({7, 8, 9}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int split_size : {2, 3}) {
     for (int dim = -rank; dim < rank; ++dim) {
@@ -7639,7 +7644,7 @@ TEST_F(AtenLtcTsTensorTest, TestSplit) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestSplitEmpty) {
-  torch::Tensor input = torch::rand({0}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor input = torch::rand({0}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int split_size = 0;
   int dim = 0;
   std::vector<torch::Tensor> outputs = torch::split(input, split_size, dim);
@@ -7656,7 +7661,7 @@ TEST_F(AtenLtcTsTensorTest, TestSplitEmpty) {
 
 TEST_F(AtenLtcTsTensorTest, TestSplitWithSizes) {
   torch::Tensor input =
-      torch::rand({15, 15, 15}, torch::TensorOptions(torch::kFloat));
+      torch::rand({15, 15, 15}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = input.dim();
   for (int dim = -rank; dim < rank; ++dim) {
     std::vector<torch::Tensor> outputs =
@@ -7678,9 +7683,9 @@ TEST_F(AtenLtcTsTensorTest, TestCrossImplicitDim) {
       {4, 5, 3}, {4, 3, 5}, {3, 4, 5}};
   for (auto dim_size : dim_sizes) {
     torch::Tensor input =
-        torch::rand(dim_size, torch::TensorOptions(torch::kFloat));
+        torch::rand(dim_size, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor other =
-        torch::rand(dim_size, torch::TensorOptions(torch::kFloat));
+        torch::rand(dim_size, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
     torch::Tensor result = torch::cross(input, other);
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7694,9 +7699,9 @@ TEST_F(AtenLtcTsTensorTest, TestCrossImplicitDim) {
 TEST_F(AtenLtcTsTensorTest, TestCrossExplicitDim) {
   std::vector<int64_t> dim_size = {3, 3};
   torch::Tensor input =
-      torch::rand(dim_size, torch::TensorOptions(torch::kFloat));
+      torch::rand(dim_size, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor other =
-      torch::rand(dim_size, torch::TensorOptions(torch::kFloat));
+      torch::rand(dim_size, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   int rank = dim_size.size();
   for (int dim = -rank; dim < rank; ++dim) {
     torch::Tensor result = torch::cross(input, other, dim);
@@ -7711,7 +7716,7 @@ TEST_F(AtenLtcTsTensorTest, TestCrossExplicitDim) {
 
 TEST_F(AtenLtcTsTensorTest, TestCrossZeroDim) {
   torch::Tensor input =
-      torch::rand({0, 1, 3, 0}, torch::TensorOptions(torch::kFloat));
+      torch::rand({0, 1, 3, 0}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor result = torch::cross(input, input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7723,7 +7728,7 @@ TEST_F(AtenLtcTsTensorTest, TestCrossZeroDim) {
 TEST_F(AtenLtcTsTensorTest, TestTriu) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::triu(input, diagonal);
@@ -7738,7 +7743,7 @@ TEST_F(AtenLtcTsTensorTest, TestTriu) {
 TEST_F(AtenLtcTsTensorTest, TestTriuNonSquare) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::triu(input, diagonal);
@@ -7754,7 +7759,7 @@ TEST_F(AtenLtcTsTensorTest, TestTriuBatch) {
   int size = 5;
   int batch_size = 3;
   torch::Tensor input = torch::rand({batch_size, size, size},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::triu(input, diagonal);
@@ -7769,7 +7774,7 @@ TEST_F(AtenLtcTsTensorTest, TestTriuBatch) {
 TEST_F(AtenLtcTsTensorTest, TestTril) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::tril(input, diagonal);
@@ -7784,7 +7789,7 @@ TEST_F(AtenLtcTsTensorTest, TestTril) {
 TEST_F(AtenLtcTsTensorTest, TestTrilNonSquare) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::tril(input, diagonal);
@@ -7800,7 +7805,7 @@ TEST_F(AtenLtcTsTensorTest, TestTrilBatch) {
   int size = 5;
   int batch_size = 3;
   torch::Tensor input = torch::rand({batch_size, size, size},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::tril(input, diagonal);
@@ -7818,7 +7823,7 @@ TEST_F(AtenLtcTsTensorTest, TestTriuInPlace) {
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor input =
-          torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+          torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_input = CopyToDevice(input, device);
       torch::Tensor output = input.triu_(diagonal);
       torch::Tensor xla_output = xla_input.triu_(diagonal);
@@ -7834,7 +7839,7 @@ TEST_F(AtenLtcTsTensorTest, TestTrilInPlace) {
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor input =
-          torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+          torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor xla_input = CopyToDevice(input, device);
       torch::Tensor output = input.tril_(diagonal);
       torch::Tensor xla_output = xla_input.tril_(diagonal);
@@ -7847,7 +7852,7 @@ TEST_F(AtenLtcTsTensorTest, TestTrilInPlace) {
 TEST_F(AtenLtcTsTensorTest, TestTrace) {
   int n = 5;
   torch::Tensor input =
-      torch::rand({n, n}, torch::TensorOptions(torch::kFloat));
+      torch::rand({n, n}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::trace(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7860,7 +7865,7 @@ TEST_F(AtenLtcTsTensorTest, TestTraceWide) {
   int lines = 3;
   int cols = 5;
   torch::Tensor input =
-      torch::rand({lines, cols}, torch::TensorOptions(torch::kFloat));
+      torch::rand({lines, cols}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::trace(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7873,7 +7878,7 @@ TEST_F(AtenLtcTsTensorTest, TestTraceNarrow) {
   int lines = 5;
   int cols = 3;
   torch::Tensor input =
-      torch::rand({lines, cols}, torch::TensorOptions(torch::kFloat));
+      torch::rand({lines, cols}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor output = torch::trace(input);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -7885,7 +7890,7 @@ TEST_F(AtenLtcTsTensorTest, TestTraceNarrow) {
 TEST_F(AtenLtcTsTensorTest, TestDiagRank1) {
   int size = 7;
   torch::Tensor input =
-      torch::rand({size}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -2 * size; diagonal <= 2 * size; ++diagonal) {
     torch::Tensor output = torch::diag(input, diagonal);
@@ -7900,7 +7905,7 @@ TEST_F(AtenLtcTsTensorTest, TestDiagRank1) {
 TEST_F(AtenLtcTsTensorTest, TestDiagRank2) {
   int size = 7;
   torch::Tensor input =
-      torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::diag(input, diagonal);
@@ -7914,7 +7919,7 @@ TEST_F(AtenLtcTsTensorTest, TestDiagRank2) {
 
 TEST_F(AtenLtcTsTensorTest, TestDiagFlat) {
   torch::Tensor input =
-      torch::rand({4, 3, 6, 7}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 3, 6, 7}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int diagonal = -10; diagonal < 10; ++diagonal) {
     torch::Tensor output = torch::diagflat(input, diagonal);
     ForEachDevice([&](const torch::Device& device) {
@@ -7928,7 +7933,7 @@ TEST_F(AtenLtcTsTensorTest, TestDiagFlat) {
 TEST_F(AtenLtcTsTensorTest, TestDiagonal) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::diagonal(input, diagonal);
@@ -7943,7 +7948,7 @@ TEST_F(AtenLtcTsTensorTest, TestDiagonal) {
 TEST_F(AtenLtcTsTensorTest, TestDiagonalNonSquare) {
   int size = 5;
   torch::Tensor input =
-      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat));
+      torch::rand({size, size + 1}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output = torch::diagonal(input, diagonal);
@@ -7961,7 +7966,7 @@ TEST_F(AtenLtcTsTensorTest, TestDiagonalBatch) {
   int dim1 = 1;
   int dim2 = 2;
   torch::Tensor input = torch::rand({batch_size, size, size},
-                                    torch::TensorOptions(torch::kFloat));
+                                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   // Test all diagonals and out of bounds (must be no-op).
   for (int diagonal = -size; diagonal <= size; ++diagonal) {
     torch::Tensor output =
@@ -8085,7 +8090,7 @@ TEST_F(AtenLtcTsTensorTest, TestBitwiseAndScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestBitwiseAndPromotion) {
   torch::Tensor input =
-      torch::rand({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor view = input.reshape(-1);
   torch::Tensor result = torch::__and__(view.gt(0), view.ne(0));
   ForEachDevice([&](const torch::Device& device) {
@@ -8206,8 +8211,8 @@ TEST_F(AtenLtcTsTensorTest, TestBitwiseXorScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestLshift) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor shift_amount = torch::randint(16, input.sizes());
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor shift_amount = torch::randint(16, input.sizes(), torch::TensorOptions().device(DefaultDevice()));
   torch::Tensor result = torch::__lshift__(input, shift_amount);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -8219,10 +8224,10 @@ TEST_F(AtenLtcTsTensorTest, TestLshift) {
 
 TEST_F(AtenLtcTsTensorTest, TestLshiftInPlace) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
-    torch::Tensor shift_amount = torch::randint(16, input.sizes());
+    torch::Tensor shift_amount = torch::randint(16, input.sizes(), torch::TensorOptions().device(DefaultDevice()));
     torch::Tensor result = input.__ilshift__(shift_amount);
     torch::Tensor xla_shift_amount = CopyToDevice(shift_amount, device);
     torch::Tensor xla_result = xla_input.__ilshift__(xla_shift_amount);
@@ -8233,7 +8238,7 @@ TEST_F(AtenLtcTsTensorTest, TestLshiftInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestLshiftScalar) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar shift_amount = 3;
   torch::Tensor result = torch::__lshift__(input, shift_amount);
   ForEachDevice([&](const torch::Device& device) {
@@ -8245,7 +8250,7 @@ TEST_F(AtenLtcTsTensorTest, TestLshiftScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestLshiftScalarInPlace) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar shift_amount = 3;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -8258,8 +8263,8 @@ TEST_F(AtenLtcTsTensorTest, TestLshiftScalarInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestRshift) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor shift_amount = torch::randint(16, input.sizes());
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor shift_amount = torch::randint(16, input.sizes(), torch::TensorOptions().device(DefaultDevice()));
   torch::Tensor result = torch::__rshift__(input, shift_amount);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -8271,10 +8276,10 @@ TEST_F(AtenLtcTsTensorTest, TestRshift) {
 
 TEST_F(AtenLtcTsTensorTest, TestRshiftInPlace) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
-    torch::Tensor shift_amount = torch::randint(16, input.sizes());
+    torch::Tensor shift_amount = torch::randint(16, input.sizes(), torch::TensorOptions().device(DefaultDevice()));
     torch::Tensor result = input.__irshift__(shift_amount);
     torch::Tensor xla_shift_amount = CopyToDevice(shift_amount, device);
     torch::Tensor xla_result = xla_input.__irshift__(xla_shift_amount);
@@ -8285,7 +8290,7 @@ TEST_F(AtenLtcTsTensorTest, TestRshiftInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestRshiftScalar) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar shift_amount = 3;
   torch::Tensor result = torch::__rshift__(input, shift_amount);
   ForEachDevice([&](const torch::Device& device) {
@@ -8297,7 +8302,7 @@ TEST_F(AtenLtcTsTensorTest, TestRshiftScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestRshiftScalarInPlace) {
   torch::Tensor input =
-      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat));
+      torch::ones({4, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar shift_amount = 3;
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_input = CopyToDevice(input, device);
@@ -8309,9 +8314,9 @@ TEST_F(AtenLtcTsTensorTest, TestRshiftScalarInPlace) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestMeshgrid) {
-  torch::Tensor a = torch::rand({3}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor b = torch::rand({2}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor c = torch::rand({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor a = torch::rand({3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor b = torch::rand({2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor c = torch::rand({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   auto d = torch::meshgrid({a, b, c});
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_a = CopyToDevice(a, device);
@@ -8327,7 +8332,7 @@ TEST_F(AtenLtcTsTensorTest, TestMeshgrid) {
 
 TEST_F(AtenLtcTsTensorTest, TestConstantPad) {
   torch::Tensor input =
-      torch::rand({4, 2, 5}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 2, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 2, 3, 4, 5, 6};
   float pad_value = 5;
   torch::Tensor output = torch::constant_pad_nd(input, pad, pad_value);
@@ -8341,7 +8346,7 @@ TEST_F(AtenLtcTsTensorTest, TestConstantPad) {
 
 TEST_F(AtenLtcTsTensorTest, TestConstantPadIncomplete) {
   torch::Tensor input =
-      torch::rand({4, 2, 5}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 2, 5}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 2};
   float pad_value = 5;
   torch::Tensor output = torch::constant_pad_nd(input, pad, pad_value);
@@ -8355,7 +8360,7 @@ TEST_F(AtenLtcTsTensorTest, TestConstantPadIncomplete) {
 
 TEST_F(AtenLtcTsTensorTest, TestReflectionPad2dRank3) {
   torch::Tensor input =
-      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{2, 2, 2, 2};
   torch::Tensor output = torch::reflection_pad2d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8367,7 +8372,7 @@ TEST_F(AtenLtcTsTensorTest, TestReflectionPad2dRank3) {
 
 TEST_F(AtenLtcTsTensorTest, TestReflectionPad2dRank4) {
   torch::Tensor input =
-      torch::rand({2, 2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{2, 2, 2, 2};
   torch::Tensor output = torch::reflection_pad2d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8385,14 +8390,14 @@ TEST_F(AtenLtcTsTensorTest, TestReflectionPad2dBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({1, 2, 4, 4},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestReplicationPad1d) {
   torch::Tensor input =
-      torch::rand({1, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 2};
   torch::Tensor output = torch::replication_pad1d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8404,7 +8409,7 @@ TEST_F(AtenLtcTsTensorTest, TestReplicationPad1d) {
 
 TEST_F(AtenLtcTsTensorTest, TestReplicationPad1dZeroPad) {
   torch::Tensor input =
-      torch::rand({1, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 0};
   torch::Tensor output = torch::replication_pad1d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8422,14 +8427,14 @@ TEST_F(AtenLtcTsTensorTest, TestReplicationPad1dBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 4},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestReplicationPad2d) {
   torch::Tensor input =
-      torch::rand({1, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 2, 2, 1};
   torch::Tensor output = torch::replication_pad2d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8441,7 +8446,7 @@ TEST_F(AtenLtcTsTensorTest, TestReplicationPad2d) {
 
 TEST_F(AtenLtcTsTensorTest, TestReplicationPad2dZeroPad) {
   torch::Tensor input =
-      torch::rand({1, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> pad{1, 0, 0, 1};
   torch::Tensor output = torch::replication_pad2d(input, pad);
   ForEachDevice([&](const torch::Device& device) {
@@ -8459,14 +8464,14 @@ TEST_F(AtenLtcTsTensorTest, TestReplicationPad2dBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 3, 4},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAsStrided) {
   torch::Tensor input =
-      torch::rand({128, 320}, torch::TensorOptions(torch::kFloat));
+      torch::rand({128, 320}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> size = {128, 20, 4, 4};
   std::vector<int64_t> stride = {320, 16, 4, 1};
   torch::Tensor output =
@@ -8481,7 +8486,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsStrided) {
 
 TEST_F(AtenLtcTsTensorTest, TestAsStridedInPlace) {
   torch::Tensor input =
-      torch::rand({128, 320}, torch::TensorOptions(torch::kFloat));
+      torch::rand({128, 320}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> size = {128, 20, 4, 4};
   std::vector<int64_t> stride = {320, 16, 4, 1};
   ForEachDevice([&](const torch::Device& device) {
@@ -8497,7 +8502,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsStridedInPlace) {
 
 TEST_F(AtenLtcTsTensorTest, TestAsStridedWithOffset) {
   torch::Tensor input =
-      torch::rand({4, 8, 2}, torch::TensorOptions(torch::kFloat));
+      torch::rand({4, 8, 2}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> size = {4, 4, 2};
   std::vector<int64_t> stride = {8, 2, 1};
   int64_t storage_offset = 4;
@@ -8514,7 +8519,7 @@ TEST_F(AtenLtcTsTensorTest, TestAsStridedWithOffset) {
 }
 
 TEST_F(AtenLtcTsTensorTest, TestAsStridedWithInplaceCopy) {
-  torch::Tensor grad = torch::ones({4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor grad = torch::ones({4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   std::vector<int64_t> size = {4};
   std::vector<int64_t> stride = {1};
   torch::Tensor output = torch::zeros({4}, grad.options());
@@ -8560,7 +8565,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool2DBackward) {
             TestBackward(
                 {torch::rand(
                     {1, 1, 7, 7},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
                 device, testfn);
           });
         }
@@ -8591,7 +8596,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3DBackward) {
             TestBackward(
                 {torch::rand(
                     {1, 1, 7, 7, 7},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
                 device, testfn);
           });
         }
@@ -8621,7 +8626,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool2DNoBatchBackward) {
             TestBackward(
                 {torch::rand(
                     {1, 7, 7},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
                 device, testfn);
           });
         }
@@ -8652,7 +8657,7 @@ TEST_F(AtenLtcTsTensorTest, TestAvgPool3DNoBatchBackward) {
             TestBackward(
                 {torch::rand(
                     {1, 7, 7, 7},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
                 device, testfn);
           });
         }
@@ -8675,7 +8680,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3DNoBatchBackward) {
       TestBackward(
           {torch::rand(
               {1, 56, 28, 28},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn);
     });
   }
@@ -8695,7 +8700,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool3DBackward) {
       TestBackward(
           {torch::rand(
               {4, 1, 56, 28, 28},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn);
     });
   }
@@ -8711,7 +8716,7 @@ TEST_F(AtenLtcTsTensorTest, TestAdaptiveAvgPool2DBackward) {
       TestBackward(
           {torch::rand(
               {4, 1, 56, 56},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn);
     });
   }
@@ -8743,14 +8748,14 @@ TEST_F(AtenLtcTsTensorTest, TestConv2D) {
                {1, 2, 4}) {  // covers normal, grouped, depthwise conv.
             ForEachDevice([&](const torch::Device& device) {
               torch::Tensor input = torch::rand(
-                  {1, in_channels, 7, 7}, torch::TensorOptions(torch::kDouble));
+                  {1, in_channels, 7, 7}, torch::TensorOptions(torch::kDouble).device(DefaultDevice()));
               torch::Tensor weight =
                   torch::rand({out_channels, in_channels / groups, kernel_size,
                                kernel_size},
-                              torch::TensorOptions(torch::kDouble));
+                              torch::TensorOptions(torch::kDouble).device(DefaultDevice()));
               torch::Tensor bias =
                   with_bias ? torch::rand({out_channels},
-                                          torch::TensorOptions(torch::kDouble))
+                                          torch::TensorOptions(torch::kDouble).device(DefaultDevice()))
                             : torch::Tensor();
 
               torch::Tensor xla_input = CopyToDevice(input, device);
@@ -8798,14 +8803,14 @@ TEST_F(AtenLtcTsTensorTest, TestConv2DBackward) {
             ForEachDevice([&](const torch::Device& device) {
               torch::Tensor bias =
                   with_bias ? torch::rand({out_channels},
-                                          torch::TensorOptions(torch::kDouble))
+                                          torch::TensorOptions(torch::kDouble).device(DefaultDevice()))
                             : torch::Tensor();
               TestBackward({torch::rand({1, in_channels, 7, 7},
-                                        torch::TensorOptions(torch::kDouble)
+                                        torch::TensorOptions(torch::kDouble).device(DefaultDevice())
                                             .requires_grad(true)),
                             torch::rand({out_channels, in_channels / groups,
                                          kernel_size, kernel_size},
-                                        torch::TensorOptions(torch::kDouble)
+                                        torch::TensorOptions(torch::kDouble).device(DefaultDevice())
                                             .requires_grad(true)),
                             bias},
                            device, testfn);
@@ -8842,14 +8847,14 @@ TEST_F(AtenLtcTsTensorTest, TestTransposedConv2DBackward) {
               ForEachDevice([&](const torch::Device& device) {
                 torch::Tensor input = torch::rand(
                     {4, out_channels, 7, 7},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
                 torch::Tensor weight = torch::rand(
                     {out_channels, in_channels / groups, kernel_size,
                      kernel_size},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
                 torch::Tensor bias =
                     with_bias ? torch::rand({in_channels},
-                                            torch::TensorOptions(torch::kFloat)
+                                            torch::TensorOptions(torch::kFloat).device(DefaultDevice())
                                                 .requires_grad(true))
                               : torch::Tensor();
                 TestBackward({input, weight, bias}, device, testfn,
@@ -8885,14 +8890,14 @@ TEST_F(AtenLtcTsTensorTest, TestConv3DBackward) {
             ForEachDevice([&](const torch::Device& device) {
               torch::Tensor bias =
                   with_bias ? torch::rand({out_channels},
-                                          torch::TensorOptions(torch::kDouble))
+                                          torch::TensorOptions(torch::kDouble).device(DefaultDevice()))
                             : torch::Tensor();
               TestBackward({torch::rand({4, in_channels, 7, 7, 7},
-                                        torch::TensorOptions(torch::kDouble)
+                                        torch::TensorOptions(torch::kDouble).device(DefaultDevice())
                                             .requires_grad(true)),
                             torch::rand({out_channels, in_channels / groups,
                                          kernel_size, kernel_size, kernel_size},
-                                        torch::TensorOptions(torch::kDouble)
+                                        torch::TensorOptions(torch::kDouble).device(DefaultDevice())
                                             .requires_grad(true)),
                             bias},
                            device, testfn);
@@ -8929,14 +8934,14 @@ TEST_F(AtenLtcTsTensorTest, TestTransposedConv3DBackward) {
               ForEachDevice([&](const torch::Device& device) {
                 torch::Tensor input = torch::rand(
                     {4, out_channels, 7, 7, 7},
-                    torch::TensorOptions(torch::kDouble).requires_grad(true));
+                    torch::TensorOptions(torch::kDouble).device(DefaultDevice()).requires_grad(true));
                 torch::Tensor weight = torch::rand(
                     {out_channels, in_channels / groups, kernel_size,
                      kernel_size, kernel_size},
-                    torch::TensorOptions(torch::kDouble).requires_grad(true));
+                    torch::TensorOptions(torch::kDouble).device(DefaultDevice()).requires_grad(true));
                 torch::Tensor bias =
                     with_bias ? torch::rand({in_channels},
-                                            torch::TensorOptions(torch::kDouble)
+                                            torch::TensorOptions(torch::kDouble).device(DefaultDevice())
                                                 .requires_grad(true))
                               : torch::Tensor();
                 TestBackward({input, weight, bias}, device, testfn);
@@ -8968,7 +8973,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2DBackward) {
           TestBackward(
               {torch::rand(
                   {1, 2, 8, 8},
-                  torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
               device, testfn);
         });
       }
@@ -8996,7 +9001,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DBackward) {
           TestBackward(
               {torch::rand(
                   {1, 2, 4, 4, 4},
-                  torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
               device, testfn);
         });
       }
@@ -9023,7 +9028,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool2DNoBatchBackward) {
           TestBackward(
               {torch::rand(
                   {2, 8, 8},
-                  torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
               device, testfn);
         });
       }
@@ -9051,7 +9056,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNoBatchBackward) {
           TestBackward(
               {torch::rand(
                   {2, 4, 4, 4},
-                  torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                  torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
               device, testfn);
         });
       }
@@ -9062,7 +9067,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxPool3DNoBatchBackward) {
 TEST_F(AtenLtcTsTensorTest, TestMaxUnpool2DBackward) {
   int kernel_size = 2;
   torch::Tensor input =
-      torch::rand({2, 2, 8, 8}, torch::TensorOptions(torch::kFloat));
+      torch::rand({2, 2, 8, 8}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
       // Test ceil_mode=true through the CPU interop.
@@ -9095,7 +9100,7 @@ TEST_F(AtenLtcTsTensorTest, TestMaxUnpool2DBackward) {
 TEST_F(AtenLtcTsTensorTest, TestMaxUnpool3DBackward) {
   int kernel_size = 2;
   torch::Tensor input =
-      torch::rand({1, 1, 4, 4, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({1, 1, 4, 4, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (int stride = 1; stride <= 2; ++stride) {
     for (int padding = 0; padding <= 1; ++padding) {
       // Test ceil_mode=true through the CPU interop.
@@ -9136,7 +9141,7 @@ TEST_F(AtenLtcTsTensorTest, TestTanhBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 2},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn, /*rtol=*/1e-3, /*atol=*/1e-5);
   });
 }
@@ -9148,7 +9153,7 @@ TEST_F(AtenLtcTsTensorTest, TestSigmoidBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 2},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9160,7 +9165,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSigmoidBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 2},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn, /*rtol=*/1e-3, /*atol=*/1e-5);
   });
 }
@@ -9176,7 +9181,7 @@ TEST_F(AtenLtcTsTensorTest, TestLogSoftmaxBackward) {
       TestBackward(
           {torch::rand(
               {5, 3, 4, 2},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn, /*rtol=*/1e-3, /*atol=*/1e-4);
     });
   }
@@ -9193,7 +9198,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftmaxBackward) {
       TestBackward(
           {torch::rand(
               {5, 3, 4, 2},
-              torch::TensorOptions(torch::kFloat).requires_grad(true))},
+              torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn, /*rtol=*/1e-3, /*atol=*/1e-4);
     });
   }
@@ -9206,7 +9211,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftplusBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 1, 4, 6},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn, /*rtol=*/1e-4);
   });
 }
@@ -9218,7 +9223,7 @@ TEST_F(AtenLtcTsTensorTest, TestReluBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 1, 4, 6},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9230,7 +9235,7 @@ TEST_F(AtenLtcTsTensorTest, TestRreluBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 1, 4, 6},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9242,7 +9247,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardshrinkBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::randn({100},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9254,7 +9259,7 @@ TEST_F(AtenLtcTsTensorTest, TestSoftshrinkBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::randn({100},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9266,7 +9271,7 @@ TEST_F(AtenLtcTsTensorTest, TestHardtanhBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::randn({100},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9281,7 +9286,7 @@ TEST_F(AtenLtcTsTensorTest, TestEluBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 1, 4, 6},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9293,7 +9298,7 @@ TEST_F(AtenLtcTsTensorTest, TestGeluBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 3},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
   ExpectCounterChanged("lazy::gelu_backward", cpp_test::GetIgnoredCounters());
@@ -9307,7 +9312,7 @@ TEST_F(AtenLtcTsTensorTest, TestLeakyReluBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 1, 4, 6},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9319,7 +9324,7 @@ TEST_F(AtenLtcTsTensorTest, TestTransposeBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({2, 3},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9337,12 +9342,12 @@ TEST_F(AtenLtcTsTensorTest, TestAddMatMulBackward) {
     ForEachDevice([&](const torch::Device& device) {
       TestBackward(
           {torch::rand({labels},
-                       torch::TensorOptions(torch::kFloat).requires_grad(true)),
+                       torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true)),
            torch::rand({in_channels, out_channels},
-                       torch::TensorOptions(torch::kFloat).requires_grad(true)),
+                       torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true)),
            torch::rand(
                {out_channels, labels},
-               torch::TensorOptions(torch::kFloat).requires_grad(true))},
+               torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
           device, testfn);
     });
   }
@@ -9389,13 +9394,13 @@ TEST_F(AtenLtcTsTensorTest, TestNllLossBackward) {
     for (int ignore_index : {-1, 0, 1, 5}) {
       for (bool def_weight : {false, true}) {
         torch::Tensor input = torch::rand(
-            {batch, classes}, torch::TensorOptions(dtype).requires_grad(true));
+            {batch, classes}, torch::TensorOptions(dtype).device(DefaultDevice()).requires_grad(true));
         torch::Tensor target =
             torch::randint(std::min(ignore_index, 0), classes, {batch},
-                           torch::TensorOptions(torch::kLong));
+                           torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         torch::Tensor weight;
         if (def_weight) {
-          weight = torch::rand({classes}, torch::TensorOptions(dtype));
+          weight = torch::rand({classes}, torch::TensorOptions(dtype).device(DefaultDevice()));
         }
         for (torch::Reduction::Reduction reduction :
              {torch::Reduction::Mean, torch::Reduction::Sum,
@@ -9428,13 +9433,13 @@ TEST_F(AtenLtcTsTensorTest, TestNllLoss2dBackward) {
       for (bool def_weight : {false, true}) {
         torch::Tensor input =
             torch::rand({batch, classes, height, width},
-                        torch::TensorOptions(dtype).requires_grad(true));
+                        torch::TensorOptions(dtype).device(DefaultDevice()).requires_grad(true));
         torch::Tensor target = torch::randint(
             std::min(ignore_index, 0), classes, {batch, height, width},
-            torch::TensorOptions(torch::kLong));
+            torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         torch::Tensor weight;
         if (def_weight) {
-          weight = torch::rand({classes}, torch::TensorOptions(dtype));
+          weight = torch::rand({classes}, torch::TensorOptions(dtype).device(DefaultDevice()));
         }
         for (torch::Reduction::Reduction reduction :
              {torch::Reduction::Mean, torch::Reduction::Sum,
@@ -9458,9 +9463,9 @@ TEST_F(AtenLtcTsTensorTest, TestNllLoss2dBackward) {
 
 TEST_F(AtenLtcTsTensorTest, TestSmoothL1LossBackward) {
   torch::Tensor input = torch::randn(
-      {2, 4}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   torch::Tensor target =
-      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat));
+      torch::randn({2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::None, torch::Reduction::Mean,
         torch::Reduction::Sum}) {
@@ -9485,7 +9490,7 @@ TEST_F(AtenLtcTsTensorTest, TestViewBackward) {
   ForEachDevice([&](const torch::Device& device) {
     TestBackward(
         {torch::rand({32, 20, 4, 4},
-                     torch::TensorOptions(torch::kFloat).requires_grad(true))},
+                     torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true))},
         device, testfn);
   });
 }
@@ -9506,23 +9511,23 @@ TEST_F(AtenLtcTsTensorTest, TestBatchNorm2DBackward) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor input =
           torch::rand({2, num_features, 4, 4},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true));
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor weight =
           undef_weight_bias
               ? undef
               : torch::rand(
                     {num_features},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor bias =
           undef_weight_bias
               ? undef
               : torch::rand(
                     {num_features},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor running_mean =
-          torch::zeros({num_features}, torch::TensorOptions(torch::kFloat));
+          torch::zeros({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor running_var =
-          torch::ones({num_features}, torch::TensorOptions(torch::kFloat));
+          torch::ones({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       TestBackward({input, weight, bias, running_mean, running_var}, device,
                    testfn,
                    /*rtol=*/1e-3, /*atol=*/1e-4);
@@ -9546,23 +9551,23 @@ TEST_F(AtenLtcTsTensorTest, TestBatchNorm3DBackward) {
     ForEachDevice([&](const torch::Device& device) {
       torch::Tensor input =
           torch::rand({2, num_features, 4, 4, 2},
-                      torch::TensorOptions(torch::kFloat).requires_grad(true));
+                      torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor weight =
           undef_weight_bias
               ? undef
               : torch::rand(
                     {num_features},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor bias =
           undef_weight_bias
               ? undef
               : torch::rand(
                     {num_features},
-                    torch::TensorOptions(torch::kFloat).requires_grad(true));
+                    torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
       torch::Tensor running_mean =
-          torch::zeros({num_features}, torch::TensorOptions(torch::kFloat));
+          torch::zeros({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       torch::Tensor running_var =
-          torch::ones({num_features}, torch::TensorOptions(torch::kFloat));
+          torch::ones({num_features}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
       TestBackward({input, weight, bias, running_mean, running_var}, device,
                    testfn,
                    /*rtol=*/1e-3, /*atol=*/1e-3);
@@ -9588,18 +9593,18 @@ TEST_F(AtenLtcTsTensorTest, TestBCEWithLogitsBackward) {
       for (bool undef_pos_weight : {false, true}) {
         torch::Tensor input = torch::rand(
             {batch, classes},
-            torch::TensorOptions(torch::kFloat).requires_grad(true));
+            torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
         torch::Tensor target = torch::rand(
             {batch, classes},
-            torch::TensorOptions(torch::kFloat).requires_grad(true));
+            torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
         torch::Tensor weight =
             undef_weight
                 ? undef
-                : torch::rand({classes}, torch::TensorOptions(torch::kFloat));
+                : torch::rand({classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         torch::Tensor pos_weight =
             undef_pos_weight
                 ? undef
-                : torch::rand({classes}, torch::TensorOptions(torch::kFloat));
+                : torch::rand({classes}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
         ForEachDevice([&](const torch::Device& device) {
           TestBackward({input, target, weight, pos_weight}, device, testfn,
                        /*rtol=*/1e-3, /*atol=*/1e-5);
@@ -9611,9 +9616,9 @@ TEST_F(AtenLtcTsTensorTest, TestBCEWithLogitsBackward) {
 
 TEST_F(AtenLtcTsTensorTest, TestKlDivBackward) {
   torch::Tensor input = torch::rand(
-      {4, 3}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   torch::Tensor target = torch::rand(
-      {4, 3}, torch::TensorOptions(torch::kFloat).requires_grad(true));
+      {4, 3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
   for (torch::Reduction::Reduction reduction :
        {torch::Reduction::Mean, torch::Reduction::Sum,
         torch::Reduction::None}) {
@@ -9642,9 +9647,9 @@ TEST_F(AtenLtcTsTensorTest, TestEmbeddingBackward) {
       ForEachDevice([&](const torch::Device& device) {
         torch::Tensor weight = torch::rand(
             {num_weights, 7},
-            torch::TensorOptions(torch::kFloat).requires_grad(true));
+            torch::TensorOptions(torch::kFloat).device(DefaultDevice()).requires_grad(true));
         torch::Tensor indices = torch::randint(
-            num_weights, {3, 9, 4}, torch::TensorOptions(torch::kLong));
+            num_weights, {3, 9, 4}, torch::TensorOptions(torch::kLong).device(DefaultDevice()));
         TestBackward({weight, indices}, device, testfn, /*rtol=*/1e-5,
                      /*atol=*/1e-8);
       });
@@ -9654,18 +9659,18 @@ TEST_F(AtenLtcTsTensorTest, TestEmbeddingBackward) {
 
 TEST_F(AtenLtcTsTensorTest, TestAmpForeachNonFiniteCheckAndUnscale) {
   torch::Tensor grads0 =
-      torch::tensor({1, 2, 3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::tensor({1, 2, 3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor grads1 = torch::tensor({1.0, 2.0, std::nan("1"), 4.0},
-                                       torch::TensorOptions(torch::kFloat));
+                                       torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor inv_scale =
-      torch::scalar_tensor(0.2, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(0.2, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor found_inf =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor grads_output0 = grads0 * inv_scale;
   torch::Tensor found_inf_output0 =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor found_inf_output1 =
-      torch::scalar_tensor(1, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(1, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ForEachDevice([&](const torch::Device& device) {
     if (grads0.device() == at::kCPU) {
       GTEST_SKIP();
@@ -9687,33 +9692,33 @@ TEST_F(AtenLtcTsTensorTest, TestAmpForeachNonFiniteCheckAndUnscale) {
 
 TEST_F(AtenLtcTsTensorTest, TestAmpUpdateScale) {
   torch::Tensor growth_tracker =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32).device(DefaultDevice()));
   torch::Tensor current_scale =
-      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor found_inf =
-      torch::scalar_tensor(1, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(1, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor not_found_inf =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   float scale_growth_factor = 2.0;
   float scale_backoff_factor = 0.5;
   int growth_interval = 3;
 
   torch::Tensor growth_tracker_result0 =
-      torch::scalar_tensor(1, torch::TensorOptions(torch::kInt32));
+      torch::scalar_tensor(1, torch::TensorOptions(torch::kInt32).device(DefaultDevice()));
   torch::Tensor current_scale_result0 =
-      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor growth_tracker_result1 =
-      torch::scalar_tensor(2, torch::TensorOptions(torch::kInt32));
+      torch::scalar_tensor(2, torch::TensorOptions(torch::kInt32).device(DefaultDevice()));
   torch::Tensor current_scale_result1 =
-      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor growth_tracker_result2 =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32).device(DefaultDevice()));
   torch::Tensor current_scale_result2 =
-      torch::scalar_tensor(8, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(8, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor growth_tracker_result3 =
-      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32));
+      torch::scalar_tensor(0, torch::TensorOptions(torch::kInt32).device(DefaultDevice()));
   torch::Tensor current_scale_result3 =
-      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(4, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
 
   ForEachDevice([&](const torch::Device& device) {
     if (growth_tracker.device() == at::kCPU) {
@@ -9760,7 +9765,7 @@ TEST_F(AtenLtcTsTensorTest, TestAmpUpdateScale) {
 
 TEST_F(AtenLtcTsTensorTest, TestEarlySyncLiveTensors) {
   torch::Tensor scalar_tensor =
-      torch::scalar_tensor(1., torch::TensorOptions(torch::kFloat));
+      torch::scalar_tensor(1., torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar scalar1 = scalar_tensor.item();
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_scalar_tensor = CopyToDevice(scalar_tensor, device);
@@ -9780,10 +9785,10 @@ TEST_F(AtenLtcTsTensorTest, TestEarlySyncLiveTensors) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerp) {
   torch::Tensor start =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor res = torch::lerp(start, end, weight);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_start = CopyToDevice(start, device);
@@ -9798,8 +9803,8 @@ TEST_F(AtenLtcTsTensorTest, TestLerp) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerpScalar) {
   torch::Tensor start =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar weight = torch::Scalar(3.0);
   torch::Tensor res = torch::lerp(start, end, weight);
   ForEachDevice([&](const torch::Device& device) {
@@ -9814,10 +9819,10 @@ TEST_F(AtenLtcTsTensorTest, TestLerpScalar) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerpInplace) {
   torch::Tensor input =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor input_copy = input.clone();
   input.lerp_(end, weight);
   ForEachDevice([&](const torch::Device& device) {
@@ -9833,8 +9838,8 @@ TEST_F(AtenLtcTsTensorTest, TestLerpInplace) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerpScalarInplace) {
   torch::Tensor input =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar weight = torch::Scalar(3.0);
   torch::Tensor input_copy = input.clone();
   input.lerp_(end, weight);
@@ -9850,11 +9855,11 @@ TEST_F(AtenLtcTsTensorTest, TestLerpScalarInplace) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerpOut) {
   torch::Tensor start =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor res = torch::empty({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor res = torch::empty({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   ;
   torch::lerp_out(res, start, end, weight);
   ForEachDevice([&](const torch::Device& device) {
@@ -9871,10 +9876,10 @@ TEST_F(AtenLtcTsTensorTest, TestLerpOut) {
 
 TEST_F(AtenLtcTsTensorTest, TestLerpScalarOut) {
   torch::Tensor start =
-      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
-  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat));
+      torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  torch::Tensor end = torch::rand({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Scalar weight = torch::Scalar(3.0);
-  torch::Tensor res = torch::empty({3, 4}, torch::TensorOptions(torch::kFloat));
+  torch::Tensor res = torch::empty({3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::lerp_out(res, start, end, weight);
   ForEachDevice([&](const torch::Device& device) {
     torch::Tensor xla_start = CopyToDevice(start, device);
