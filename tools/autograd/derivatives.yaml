@@ -1106,10 +1106,10 @@
   x2: not_implemented("_cdist_backward")
   cdist: not_implemented("_cdist_backward")
 
-- name: normal_(Tensor(a!) self, float mean=0, float std=1, *, Generator? generator=None) -> Tensor(a!)
+- name: normal_(Tensor(a!) self, float mean, float std, *, Generator? generator=None) -> Tensor(a!)
   self: zeros_like(grad)
 
-- name: normal.Tensor_float(Tensor mean, float std=1, *, Generator? generator=None) -> Tensor
+- name: normal.Tensor_float(Tensor mean, float std, *, Generator? generator=None) -> Tensor
   mean: at::zeros(mean.sizes(), grad.options())
 
 - name: normal.float_Tensor(float mean, Tensor std, *, Generator? generator=None) -> Tensor

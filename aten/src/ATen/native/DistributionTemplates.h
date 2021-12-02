@@ -157,6 +157,7 @@ at::Tensor& random_from_to_impl(at::Tensor& self, int64_t from, c10::optional<in
 
 // ==================================================== Normal ========================================================
 
+/*
 // This function computes broadcasted size of mean and std, resize the output to the broadcasted size if it was empty
 // [Note] The following features will be deprecated in version 1.6 release and function signature will be changed after
 //   When mean and std are not broadcastable but have same number of elements:
@@ -278,6 +279,7 @@ Tensor normal_impl(const Tensor& mean, const Tensor& std, c10::optional<Generato
   normal_out_impl<normal_kernel, RNG>(ret, mean, std, gen);
   return ret;
 }
+*/
 
 // ==================================================== Uniform =======================================================
 

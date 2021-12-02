@@ -250,6 +250,7 @@ Tensor& uniform_meta_(Tensor& self, double from, double to, c10::optional<Genera
 
 // ==================================================== Normal ========================================================
 
+/*
 template<typename RNG>
 struct NormalStub {
   void operator()(Tensor& self, double mean, double std, c10::optional<Generator> gen) {
@@ -289,6 +290,7 @@ Tensor normal(double mean, const Tensor& std, c10::optional<Generator> gen) {
 Tensor normal(const Tensor& mean, const Tensor& std, c10::optional<Generator> gen) {
   return at::native::templates::normal_impl<NormalStub, Generator>(mean, std, gen);
 }
+*/
 
 // ==================================================== Random ========================================================
 
@@ -600,4 +602,80 @@ Tensor multinomial(
   return result;
 }
 
-}} // namespace at::native
+} // namespace at::native
+
+namespace meta {
+
+TORCH_META_FUNC2(normal, float_float) (
+  double,
+  double,
+  c10::optional<Generator>
+) {
+  // XXX: todo
+}
+
+TORCH_META_FUNC2(normal, float_Tensor) (
+  double,
+  Tensor const&,
+  c10::optional<Generator>
+) {
+  // XXX: todo
+}
+
+TORCH_META_FUNC2(normal, Tensor_float) (
+  Tensor const&,
+  double,
+  c10::optional<Generator>
+) {
+  // XXX: todo
+}
+
+TORCH_META_FUNC2(normal, Tensor_Tensor) (
+  Tensor const&,
+  Tensor const&,
+  c10::optional<Generator>
+) {
+  // XXX: todo
+}
+} // namespace at::meta
+
+namespace native {
+
+TORCH_IMPL_FUNC(normal_float_float_out) (
+  double,
+  double,
+  c10::optional<Generator>,
+  Tensor&
+) {
+  // XXX: todo
+}
+
+TORCH_IMPL_FUNC(normal_float_Tensor_out) (
+  double,
+  Tensor const&,
+  c10::optional<Generator>,
+  Tensor const&
+) {
+  // XXX: todo
+}
+
+TORCH_IMPL_FUNC(normal_Tensor_float_out) (
+  Tensor const&,
+  double,
+  c10::optional<Generator>,
+  Tensor const&
+) {
+  // XXX: todo
+}
+
+TORCH_IMPL_FUNC(normal_Tensor_Tensor_out) (
+  Tensor const&,
+  Tensor const&,
+  c10::optional<Generator>,
+  Tensor const&
+) {
+  // XXX: todo
+}
+
+} // namespace at::native
+} // namespace at

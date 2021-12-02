@@ -57,33 +57,33 @@ Tensor& random_to(Tensor& self, int64_t to, c10::optional<Generator> generator) 
 
 // ==================================================== Normal ========================================================
 
-Tensor& normal_(Tensor& self, double mean, double std, c10::optional<Generator> gen) {
-  return at::native::templates::normal_impl_<native::templates::cpu::NormalKernel, TestCPUGenerator>(self, mean, std, gen);
-}
+// Tensor& normal_(Tensor& self, double mean, double std, c10::optional<Generator> gen) {
+//   return at::native::templates::normal_impl_<native::templates::cpu::NormalKernel, TestCPUGenerator>(self, mean, std, gen);
+// }
 
-Tensor& normal_Tensor_float_out(const Tensor& mean, double std, c10::optional<Generator> gen, Tensor& output) {
-  return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
-}
+// Tensor& normal_Tensor_float_out(const Tensor& mean, double std, c10::optional<Generator> gen, Tensor& output) {
+//   return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
+// }
 
-Tensor& normal_float_Tensor_out(double mean, const Tensor& std, c10::optional<Generator> gen, Tensor& output) {
-  return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
-}
+// Tensor& normal_float_Tensor_out(double mean, const Tensor& std, c10::optional<Generator> gen, Tensor& output) {
+//   return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
+// }
 
-Tensor& normal_Tensor_Tensor_out(const Tensor& mean, const Tensor& std, c10::optional<Generator> gen, Tensor& output) {
-  return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
-}
+// Tensor& normal_Tensor_Tensor_out(const Tensor& mean, const Tensor& std, c10::optional<Generator> gen, Tensor& output) {
+//   return at::native::templates::normal_out_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(output, mean, std, gen);
+// }
 
-Tensor normal_Tensor_float(const Tensor& mean, double std, c10::optional<Generator> gen) {
-  return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
-}
+// Tensor normal_Tensor_float(const Tensor& mean, double std, c10::optional<Generator> gen) {
+//   return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
+// }
 
-Tensor normal_float_Tensor(double mean, const Tensor& std, c10::optional<Generator> gen) {
-  return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
-}
+// Tensor normal_float_Tensor(double mean, const Tensor& std, c10::optional<Generator> gen) {
+//   return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
+// }
 
-Tensor normal_Tensor_Tensor(const Tensor& mean, const Tensor& std, c10::optional<Generator> gen) {
-  return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
-}
+// Tensor normal_Tensor_Tensor(const Tensor& mean, const Tensor& std, c10::optional<Generator> gen) {
+//   return at::native::templates::normal_impl<native::templates::cpu::NormalKernel, TestCPUGenerator>(mean, std, gen);
+// }
 
 // ==================================================== Uniform =======================================================
 
@@ -135,13 +135,13 @@ TORCH_LIBRARY_IMPL(aten, CustomRNGKeyId, m) {
   m.impl("random_.to",               random_to);
   m.impl("random_",                  random_);
   // Normal
-  m.impl("normal_",                  normal_);
-  m.impl("normal.Tensor_float_out",  normal_Tensor_float_out);
-  m.impl("normal.float_Tensor_out",  normal_float_Tensor_out);
-  m.impl("normal.Tensor_Tensor_out", normal_Tensor_Tensor_out);
-  m.impl("normal.Tensor_float",      normal_Tensor_float);
-  m.impl("normal.float_Tensor",      normal_float_Tensor);
-  m.impl("normal.Tensor_Tensor",     normal_Tensor_Tensor);
+  // m.impl("normal_",                  normal_);
+  // m.impl("normal.Tensor_float_out",  normal_Tensor_float_out);
+  // m.impl("normal.float_Tensor_out",  normal_float_Tensor_out);
+  // m.impl("normal.Tensor_Tensor_out", normal_Tensor_Tensor_out);
+  // m.impl("normal.Tensor_float",      normal_Tensor_float);
+  // m.impl("normal.float_Tensor",      normal_float_Tensor);
+  // m.impl("normal.Tensor_Tensor",     normal_Tensor_Tensor);
   m.impl("uniform_",                 uniform_);
   // Cauchy
   m.impl("cauchy_",                  cauchy_);

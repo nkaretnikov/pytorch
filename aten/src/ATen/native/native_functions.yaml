@@ -7679,40 +7679,42 @@
 - func: float_power_.Tensor(Tensor(a!) self, Tensor exponent) -> Tensor(a!)
   variants: method
 
-- func: normal_(Tensor(a!) self, float mean=0, float std=1, *, Generator? generator=None) -> Tensor(a!)
+- func: normal_(Tensor(a!) self, float mean, float std, *, Generator? generator=None) -> Tensor(a!)
+  structured_delegate: normal.float_float_out
   device_check: NoCheck   # TensorIterator
   variants: method
-  dispatch:
-    CPU, CUDA: normal_
-    Meta: normal_meta_
 
-- func: normal.Tensor_float_out(Tensor mean, float std=1, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+- func: normal.Tensor_float_out(Tensor mean, float std, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+  structured: True
   dispatch:
-    CPU, CUDA: normal_out
+    CPU, CUDA: normal_Tensor_float_out
 
-- func: normal.Tensor_float(Tensor mean, float std=1, *, Generator? generator=None) -> Tensor
-  dispatch:
-    CPU, CUDA: normal
+- func: normal.Tensor_float(Tensor mean, float std, *, Generator? generator=None) -> Tensor
+  structured_delegate: normal.Tensor_float_out
 
 - func: normal.float_Tensor_out(float mean, Tensor std, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+  structured: True
   dispatch:
-    CPU, CUDA: normal_out
+    CPU, CUDA: normal_float_Tensor_out
 
 - func: normal.float_Tensor(float mean, Tensor std, *, Generator? generator=None) -> Tensor
-  dispatch:
-    CPU, CUDA: normal
+  structured_delegate: normal.float_Tensor_out
 
 - func: normal.Tensor_Tensor_out(Tensor mean, Tensor std, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+  structured: True
   dispatch:
-    CPU, CUDA: normal_out
+    CPU, CUDA: normal_Tensor_Tensor_out
 
 - func: normal.Tensor_Tensor(Tensor mean, Tensor std, *, Generator? generator=None) -> Tensor
+  structured_delegate: normal.Tensor_Tensor_out
+
+- func: normal.float_float(float mean, float std, *, Generator? generator=None, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
+  structured_delegate: normal.float_float_out
+
+- func: normal.float_float_out(float mean, float std, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+  structured: True
   dispatch:
-    CPU, CUDA: normal
-
-- func: normal.float_float(float mean, float std, int[] size, *, Generator? generator=None, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
-
-- func: normal.float_float_out(float mean, float std, int[] size, *, Generator? generator=None, Tensor(a!) out) -> Tensor(a!)
+    CPU, CUDA: normal_float_float_out
 
 - func: alias(Tensor(a) self) -> Tensor(a)
   variants: method, function
