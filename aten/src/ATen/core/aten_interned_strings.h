@@ -441,6 +441,7 @@ _(aten, lstm_cell) \
 _(aten, lstsq) \
 _(aten, lu_solve) \
 _(aten, margin_ranking_loss) \
+_(aten, margin_ranking_loss_backward) \
 _(aten, masked_fill) \
 _(aten, masked_scatter) \
 _(aten, masked_select) \
