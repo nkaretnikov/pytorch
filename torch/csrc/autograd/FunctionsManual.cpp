@@ -1551,6 +1551,21 @@ Tensor smooth_l1_loss_double_backward_grad_output(const Tensor & grad, const Ten
   return (r * grad).sum();
 }
 
+// Helper for kernels such as margin_ranking_loss_backward_input1.  For input1
+// and input2, the result only differs by the sign.  So a single kernel can be
+// used for computing both, which can later be passed to this helper to get the
+// proper sign.
+//
+// df/di1 -t * (i1 - i2) + m = -t
+// df/di2 -t * (i1 - i2) + m =  t
+//
+// Note that the order in the pair is swapped (compared to the derivatives
+// above) such that the first component is the identity.  This needs to be
+// accounted for in the kernel implementation.
+std::tuple<Tensor, Tensor> sub_backward(const Tensor& grad) {
+  return std::make_tuple(grad, -grad);
+}
+
 Tensor huber_loss_double_backward(const Tensor & grad, const Tensor & input, const Tensor & target, int64_t reduction, double delta) {
   auto d = (input - target).abs();
   auto grad_input = grad * (d < delta);
