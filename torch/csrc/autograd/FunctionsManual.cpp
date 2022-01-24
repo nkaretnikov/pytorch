@@ -1566,28 +1566,41 @@ std::tuple<Tensor, Tensor> sub_backward(const Tensor& grad) {
   return std::make_tuple(grad, -grad);
 }
 
-// Tensor margin_ranking_loss_double_backward(
-//   const Tensor& grad,
-//   const Tensor& input1,
-//   const Tensor& input2,
-//   const Tensor& target,
-//   double margin,
-//   int64_t reduction
-// ) {
-//   // XXX: todo
-// }
+// d^2f/di1t
+Tensor margin_ranking_loss_double_backward_input1_target(
+  const Tensor& grad,
+  const Tensor& input1,
+  const Tensor& input2,
+  const Tensor& target,
+  double margin,
+  int64_t reduction
+) {
+  auto zeros = at::zeros_like(grad);
+  auto ones = at::ones_like(grad);
+  auto result = maximum(zeros, target * (input2 - input1) + margin);
+  return result.gt(zeros).item<bool>() ? ones.neg() : zeros;  // XXX: mean
+}
 
-// Tensor margin_ranking_loss_double_backward_grad_output(
-//   const Tensor& grad,
-//   const Tensor& grad_output,
-//   const Tensor& input1,
-//   const Tensor& input2,
-//   const Tensor& target,
-//   double margin,
-//   int64_t reduction
-// ) {
-//   // XXX: todo
-// }
+Tensor margin_ranking_loss_double_backward_grad_output(
+  const Tensor& grad,
+  const Tensor& grad_output,
+  const Tensor& input1,
+  const Tensor& input2,
+  const Tensor& target,
+  double margin,
+  int64_t reduction
+) {
+  auto result = margin_ranking_loss_backward_input1(
+    grad, input1, input2, target, margin, at::Reduction::None);
+
+  if (reduction == at::Reduction::Mean) {
+    return result.mean();
+  } else if (reduction == at::Reduction::Sum) {
+    return result.sum();
+  }
+
+  return result;
+}
 
 Tensor huber_loss_double_backward(const Tensor & grad, const Tensor & input, const Tensor & target, int64_t reduction, double delta) {
   auto d = (input - target).abs();

@@ -7701,6 +7701,9 @@ def sample_inputs_margin_ranking_loss(op_info, device, dtype, requires_grad, **k
             'reduction': reduction,
         }
 
+        print("XXX: input1", input1)
+        print("XXX: args", args)
+        print("XXX: kwargs", kwargs)
         yield SampleInput(input1, args=args, kwargs=kwargs)
 
 def sample_inputs_pairwise_distance(op_info, device, dtype, requires_grad, **kwargs):

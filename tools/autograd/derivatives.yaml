@@ -2184,10 +2184,19 @@
   self: smooth_l1_loss_double_backward(grad * grad_output, self, target, reduction, beta)
   target: -smooth_l1_loss_double_backward(grad * grad_output, self, target, reduction, beta)
 
-# - name: margin_ranking_loss_backward_input(Tensor grad_output, Tensor self, Tensor input2, Tensor target, float margin, int reduction) -> Tensor
-#   grad_output: margin_ranking_loss_double_backward_grad_output(grad, grad_output, self, input2, target, margin, reduction)
-#   self: margin_ranking_loss_double_backward(grad * grad_output, self, input2, target, margin, reduction)
-#   target: -margin_ranking_loss_double_backward(grad * grad_output, self, input2, target, margin, reduction)
+- name: margin_ranking_loss_backward_input1(Tensor grad_output, Tensor input1, Tensor input2, Tensor target, float margin, int reduction) -> Tensor
+  grad_output: margin_ranking_loss_double_backward_grad_output(grad, grad_output, input1, input2, target, margin, reduction)
+  # input1, input2, target: margin_ranking_loss_double_backward(grad * grad_output, input1, input2, target, margin, reduction)
+  input1: zeros_like(grad)
+  input2: zeros_like(grad)
+  target: margin_ranking_loss_double_backward_input1_target(grad * grad_output, input1, input2, target, margin, reduction)
+
+- name: margin_ranking_loss_backward_target(Tensor grad_output, Tensor input1, Tensor input2, Tensor target, float margin, int reduction) -> Tensor
+  grad_output: margin_ranking_loss_double_backward_grad_output(grad, grad_output, input1, input2, target, margin, reduction)
+  # input1, input2, target: margin_ranking_loss_double_backward(grad * grad_output, input1, input2, target, margin, reduction)
+  input1: margin_ranking_loss_double_backward_input1_target(grad * grad_output, input1, input2, target, margin, reduction)
+  input2: -margin_ranking_loss_double_backward_input1_target(grad * grad_output, input1, input2, target, margin, reduction)
+  target: zeros_like(grad)
 
 - name: huber_loss_backward(Tensor grad_output, Tensor self, Tensor target, int reduction, float delta) -> Tensor
   grad_output: huber_loss_double_backward_grad_output(grad, grad_output, self, target, reduction, delta)

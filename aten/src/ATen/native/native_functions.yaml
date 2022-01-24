@@ -2870,7 +2870,7 @@
   dispatch:
     CPU, CUDA: margin_ranking_loss_backward_input1
 
-- func: margin_ranking_loss_backward_target(Tensor grad_output, Tensor input1, Tensor input2, Tensor target, float margin, int reductionn) -> Tensor
+- func: margin_ranking_loss_backward_target(Tensor grad_output, Tensor input1, Tensor input2, Tensor target, float margin, int reduction) -> Tensor
   device_check: NoCheck   # TensorIterator
   python_module: nn
   dispatch:

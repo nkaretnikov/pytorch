@@ -1058,6 +1058,17 @@ TensorIterator TensorIterator::ternary_op(
   return iter;
 }
 
+TensorIterator TensorIterator::borrowing_ternary_op(
+  const TensorBase& out,
+  const TensorBase& a,
+  const TensorBase& b,
+  const TensorBase& c
+) {
+  TensorIterator iter;
+  iter.build_borrowing_ternary_op(out, a, b, c);
+  return iter;
+}
+
 TensorIterator TensorIterator::binary_op(TensorBase& out, const TensorBase& a, const TensorBase& b) {
   TensorIterator iter;
   iter.build_binary_op(out, a, b);
