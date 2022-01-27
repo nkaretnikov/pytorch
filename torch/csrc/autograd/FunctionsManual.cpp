@@ -1551,20 +1551,66 @@ Tensor smooth_l1_loss_double_backward_grad_output(const Tensor & grad, const Ten
   return (r * grad).sum();
 }
 
-// Helper for kernels such as margin_ranking_loss_backward_input1.  For input1
-// and input2, the result only differs by the sign.  So a single kernel can be
-// used for computing both, which can later be passed to this helper to get the
-// proper sign.
-//
-// df/di1 -t * (i1 - i2) + m = -t
-// df/di2 -t * (i1 - i2) + m =  t
-//
-// Note that the order in the pair is swapped (compared to the derivatives
-// above) such that the first component is the identity.  This needs to be
-// accounted for in the kernel implementation.
 std::tuple<Tensor, Tensor> sub_backward(const Tensor& grad) {
   return std::make_tuple(grad, -grad);
 }
+
+std::tuple<Tensor, Tensor> margin_ranking_loss_backward_input1_backward(const Tensor& grad,
+                                                                        const Tensor& grad_output,
+                                                                        const Tensor& input1,
+                                                                        const Tensor& input2,
+                                                                        const Tensor& target,
+                                                                        double margin,
+                                                                        int64_t reduction) {
+  if (!grad.defined()) {
+    return {};
+  }
+  auto grad_output_grad = [&]{
+    if (reduction == at::Reduction::None) {
+      return margin_ranking_loss_backward_input1(grad, input1, input2, target, margin, reduction);
+    }
+    auto r = margin_ranking_loss_backward_input1(ones_like(grad_output), input1, input2, target, margin, reduction);
+    return (r * grad).sum();
+  }();
+  auto l = at::margin_ranking_loss(input1, input2, target, margin, at::Reduction::None);
+  auto target_grad = at::where(l > 0, -grad * grad_output, at::zeros({1}, target.options()));
+  if (reduction == at::Reduction::Mean) {
+    target_grad = target_grad / l.numel();
+  }
+  return std::make_tuple(std::move(grad_output_grad),
+                         std::move(target_grad));
+}
+
+std::tuple<Tensor, Tensor, Tensor> margin_ranking_loss_backward_target_backward(
+    const Tensor& grad,
+    const Tensor& grad_output,
+    const Tensor& input1,
+    const Tensor& input2,
+    const Tensor& target,
+    double margin,
+    int64_t reduction)
+{
+  if (!grad.defined()) {
+    return {};
+  }
+  auto grad_output_grad = [&]{
+    if (reduction == at::Reduction::None) {
+      return margin_ranking_loss_backward_target(grad, input1, input2, target, margin, reduction);
+    }
+    auto r = margin_ranking_loss_backward_target(ones_like(grad_output), input1, input2, target, margin, reduction);
+    return (r * grad).sum();
+  }();
+  auto l = at::margin_ranking_loss(input1, input2, target, margin, at::Reduction::None);
+  auto input2_grad = at::where(l > 0, grad * grad_output, at::zeros({1}, input2.options()));
+  if (reduction == at::Reduction::Mean) {
+    input2_grad = input2_grad / l.numel();
+  }
+  auto input1_grad = -input2_grad;
+  return std::make_tuple(std::move(grad_output_grad),
+                         std::move(input1_grad),
+                         std::move(input2_grad));
+}
+
 
 Tensor huber_loss_double_backward(const Tensor & grad, const Tensor & input, const Tensor & target, int64_t reduction, double delta) {
   auto d = (input - target).abs();
