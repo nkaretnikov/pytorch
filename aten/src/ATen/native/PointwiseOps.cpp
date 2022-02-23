@@ -11,14 +11,6 @@
 namespace at {
 namespace meta {
 
-TORCH_META_FUNC(addcmul)
-(const Tensor& self,
- const Tensor& tensor1,
- const Tensor& tensor2,
- const Scalar& value) {
-  build_ternary_op(maybe_get_output(), self, tensor1, tensor2);
-}
-
 TORCH_META_FUNC(addcdiv)
 (const Tensor& self,
  const Tensor& tensor1,
@@ -43,13 +35,37 @@ TORCH_META_FUNC(addcdiv)
 } // namespace meta
 namespace native {
 
-TORCH_IMPL_FUNC(addcmul_out)
-(const Tensor& self,
- const Tensor& tensor1,
- const Tensor& tensor2,
- const Scalar& value,
- const Tensor& result) {
-  addcmul_stub(device_type(), *this, value);
+Tensor addcmul(
+    const Tensor& self,
+    const Tensor& tensor1,
+    const Tensor& tensor2,
+    const Scalar& value) {
+  Tensor result = at::empty({0}, self.options());
+  return at::addcmul_out(result, self, tensor1, tensor2, value);
+}
+
+Tensor& addcmul_(
+    Tensor& self,
+    const Tensor& tensor1,
+    const Tensor& tensor2,
+    const Scalar& value) {
+  return at::addcmul_out(self, self, tensor1, tensor2, value);
+}
+
+Tensor& addcmul_out(const Tensor& self,
+    const Tensor& tensor1,
+    const Tensor& tensor2,
+    const Scalar& value,
+    Tensor& result) {
+  checkBackend("addcmul_cpu", result, self.options().backend());
+  auto iter = at::TensorIteratorConfig()
+    .add_output(result)
+    .add_input(self)
+    .add_input(tensor1)
+    .add_input(tensor2)
+    .build();
+  addcmul_stub(iter.device_type(), iter, value);
+  return result;
 }
 
 TORCH_IMPL_FUNC(addcdiv_out)

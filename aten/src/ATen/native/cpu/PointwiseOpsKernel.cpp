@@ -10,7 +10,7 @@ namespace at {
 namespace native {
 namespace {
 
-static void addcmul_cpu_kernel(TensorIteratorBase& iter, const Scalar& value) {
+static void addcmul_cpu_kernel(TensorIterator& iter, const Scalar& value) {
   ScalarType dtype = iter.dtype(0);
   if (iter.dtype() == kBFloat16) {
     float float_val = value.to<float>();
