@@ -1,4 +1,5 @@
 #include <ATen/native/GridSampler.h>
+#include <ATen/native/GridSamplerCommon.h>
 #include <ATen/ATen.h>
 #include <ATen/Device.h>
 #include <ATen/NativeFunctions.h>
@@ -16,6 +17,111 @@ namespace at { namespace native {
 using at::native::detail::GridSamplerInterpolation;
 using at::native::detail::GridSamplerPadding;
 
+DEFINE_DISPATCH(check_grid_sampler_common_stub);
+DEFINE_DISPATCH(check_grid_sampler_2d_stub);
+DEFINE_DISPATCH(check_grid_sampler_3d_stub);
+DEFINE_DISPATCH(cond_cudnn_grid_sampler_stub);
+
+// See NOTE [ grid_sampler Native Functions ].
+void check_grid_sampler_common(const TensorBase& input_, const TensorBase& grid_) {
+  auto input = Tensor(input_);
+  auto grid = Tensor(grid_);
+
+  auto input_opt = input.options();
+  auto grid_opt = grid.options();
+
+  TORCH_CHECK(
+    input.defined() && grid.defined(),
+    "grid_sampler(): expected input and grid to not be undefined, but input "
+    "is ", input, " and grid is ", grid);
+  TORCH_CHECK(
+    input_opt.device() == grid_opt.device(),
+    "grid_sampler(): expected input and grid to be on same device, but input "
+    "is on ", input_opt.device(), " and grid is on ", grid_opt.device());
+  TORCH_CHECK(
+    input_opt.layout() == kStrided && grid_opt.layout() == kStrided,
+    "grid_sampler(): expected input and grid to have torch.strided layout, but "
+    "input has ", input_opt.layout(), " and grid has ", grid_opt.layout());
+  TORCH_CHECK(
+    input.size(0) == grid.size(0),
+    "grid_sampler(): expected grid and input to have same batch size, but got "
+    "input with sizes ", input.sizes(), " and grid with sizes ", grid.sizes());
+  TORCH_CHECK(
+    grid.size(-1) == input.dim() - 2,
+    "grid_sampler(): expected grid to have size ", input.dim() - 2, " in last "
+    "dimension, but got grid with sizes ", grid.sizes());
+
+  for (const auto i : c10::irange(2, input.dim())) {
+    TORCH_CHECK(input.size(i) > 0,
+      "grid_sampler(): expected input to have non-empty spatial dimensions, "
+      "but input has sizes ", input.sizes(), " with dimension ", i, " being "
+      "empty");
+  }
+}
+
+// See NOTE [ grid_sampler Native Functions ].
+void check_grid_sampler_2d(const TensorBase& input_, const TensorBase& grid_) {
+  auto input = Tensor(input_);
+  auto grid = Tensor(grid_);
+
+  TORCH_CHECK(
+    input.dim() == 4 && input.dim() == grid.dim(),
+    "grid_sampler(): expected 4D input and grid with same number of "
+    "dimensions, but got input with sizes ", input.sizes(),
+    " and grid with sizes ", grid.sizes());
+}
+
+// See NOTE [ grid_sampler Native Functions ].
+void check_grid_sampler_3d(
+  const TensorBase& input_,
+  const TensorBase& grid_,
+  GridSamplerInterpolation interpolation_mode
+) {
+  auto input = Tensor(input_);
+  auto grid = Tensor(grid_);
+
+  TORCH_CHECK(
+    input.dim() == 5 && input.dim() == grid.dim(),
+    "grid_sampler(): expected 5D input and grid with same number of "
+    "dimensions, but got input with sizes ", input.sizes(),
+    " and grid with sizes ", grid.sizes());
+  TORCH_CHECK(
+    !(input.dim() == 5 &&
+      static_cast<GridSamplerInterpolation>(interpolation_mode) ==
+        GridSamplerInterpolation::Bicubic),
+    "grid_sampler(): bicubic interpolation only supports 4D input");
+}
+
+// See NOTE [ grid_sampler Native Functions ].
+// cudnn does not support inputs larger than 1024.
+bool cond_cudnn_grid_sampler(const TensorBase& input_, const TensorBase& grid_) {
+  auto input = Tensor(input_);
+  auto grid = Tensor(grid_);
+
+  return (
+    at::native::cudnn_is_acceptable(input) &&
+    at::native::cudnn_is_acceptable(grid) &&
+    at::native::canUse32BitIndexMath(input) &&
+    at::native::canUse32BitIndexMath(grid) &&
+    input.dim() == 4 &&
+    input.size(1) <= 1024);
+}
+
+// REGISTER_DISPATCH(check_grid_sampler_common_stub, &check_grid_sampler_common);
+// REGISTER_DISPATCH(check_grid_sampler_2d_stub, &check_grid_sampler_2d);
+// REGISTER_DISPATCH(check_grid_sampler_3d_stub, &check_grid_sampler_3d);
+// REGISTER_DISPATCH(cond_cudnn_grid_sampler_stub, &cond_cudnn_grid_sampler);
+
+REGISTER_ALL_CPU_DISPATCH(check_grid_sampler_common_stub, &check_grid_sampler_common);
+REGISTER_ALL_CPU_DISPATCH(check_grid_sampler_2d_stub, &check_grid_sampler_2d);
+REGISTER_ALL_CPU_DISPATCH(check_grid_sampler_3d_stub, &check_grid_sampler_3d);
+REGISTER_ALL_CPU_DISPATCH(cond_cudnn_grid_sampler_stub, &cond_cudnn_grid_sampler);
+
+REGISTER_CUDA_DISPATCH(check_grid_sampler_common_stub, &check_grid_sampler_common);
+REGISTER_CUDA_DISPATCH(check_grid_sampler_2d_stub, &check_grid_sampler_2d);
+REGISTER_CUDA_DISPATCH(check_grid_sampler_3d_stub, &check_grid_sampler_3d);
+REGISTER_CUDA_DISPATCH(cond_cudnn_grid_sampler_stub, &cond_cudnn_grid_sampler);
+
 namespace {
 
   template<typename scalar_t>
@@ -23,6 +129,11 @@ namespace {
                                   GridSamplerInterpolation interpolation_mode,
                                   GridSamplerPadding padding_mode,
                                   bool align_corners) {
+    // See NOTE [ grid_sampler Native Functions ].
+    // Add checks here in case this is called instead of grid_sampler.
+    check_grid_sampler_common_stub(input, grid);
+    check_grid_sampler_3d_stub(input, grid, interpolation_mode);
+
     int64_t N = input.size(0);
     int64_t C = input.size(1);
     int64_t inp_D = input.size(2);
@@ -179,6 +290,11 @@ namespace {
                                     GridSamplerInterpolation interpolation_mode,
                                     GridSamplerPadding padding_mode,
                                     bool align_corners, std::array<bool,2> output_mask) {
+    // See NOTE [ grid_sampler Native Functions ].
+    // Add checks here in case this is called instead of grid_sampler.
+    check_grid_sampler_common_stub(input, grid);
+    check_grid_sampler_3d_stub(input, grid, interpolation_mode);
+
     auto input_requires_grad = output_mask[0];
     Tensor grad_input = ([&]() {
       if (input_requires_grad) {
@@ -384,7 +500,7 @@ namespace {
                 int64_t iy_nearest = static_cast<int64_t>(std::round(iy));
                 int64_t iz_nearest = static_cast<int64_t>(std::round(iz));
 
-                // assign nearest neighor pixel value to output pixel
+                // assign nearest neighbor pixel value to output pixel
                 scalar_t *gOut_ptr_NCDHW = gOut_ptr + n * gOut_sN + d * gOut_sD + h * gOut_sH + w * gOut_sW;
                 if (input_requires_grad) {
                   scalar_t *gInp_ptr_NC = gInp_ptr + n * gInp_sN;
@@ -411,6 +527,11 @@ Tensor _grid_sampler_2d_cpu_quantized(
     int64_t interpolation_mode_,
     int64_t padding_mode_,
     bool align_corners) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_2d_stub(input, grid);
+
   auto interpolation_mode =
       static_cast<GridSamplerInterpolation>(interpolation_mode_);
   /* Bilinear interpolation is supported using the fact that we can perform
@@ -515,6 +636,11 @@ Tensor _grid_sampler_2d_cpu_fallback(const Tensor& input, const Tensor& grid,
                                      int64_t interpolation_mode_,
                                      int64_t padding_mode_,
                                      bool align_corners) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_2d_stub(input, grid);
+
   auto interpolation_mode = static_cast<GridSamplerInterpolation>(interpolation_mode_);
   auto padding_mode = static_cast<GridSamplerPadding>(padding_mode_);
   using scalar_t = float;
@@ -663,6 +789,11 @@ _grid_sampler_2d_cpu_fallback_backward(const Tensor& grad_output,
                                        int64_t interpolation_mode_,
                                        int64_t padding_mode_,
                                        bool align_corners) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_2d_stub(input, grid);
+
   const auto interpolation_mode = static_cast<GridSamplerInterpolation>(interpolation_mode_);
   const auto padding_mode = static_cast<GridSamplerPadding>(padding_mode_);
   using scalar_t = float;
@@ -856,10 +987,14 @@ _grid_sampler_2d_cpu_fallback_backward(const Tensor& grad_output,
   return std::make_tuple(grad_input, grad_grid);
 }
 
-// No shape checking needed here. See # NOTE [ grid_sampler Native Functions ].
 Tensor grid_sampler_2d_cpu(const Tensor& input, const Tensor& grid,
                            int64_t interpolation_mode, int64_t padding_mode,
                            bool align_corners) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_2d_stub(input, grid);
+
   if (input.scalar_type() == kQUInt8) {
     return native::_grid_sampler_2d_cpu_quantized(
         input, grid, interpolation_mode, padding_mode, align_corners);
@@ -896,10 +1031,17 @@ Tensor grid_sampler_2d_cpu(const Tensor& input, const Tensor& grid,
 DEFINE_DISPATCH(grid_sampler_2d_cpu_kernel);
 
 
-// No shape checking needed here. See # NOTE [ grid_sampler Native Functions ].
 Tensor grid_sampler_3d_cpu(const Tensor& input, const Tensor& grid,
                            int64_t interpolation_mode, int64_t padding_mode,
                            bool align_corners) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_3d_stub(
+    input,
+    grid,
+    static_cast<GridSamplerInterpolation>(interpolation_mode));
+
   return AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "grid_sampler3d_cpu", [&] {
     return grid_sampler_3d_cpu_impl<scalar_t>(
       input, grid, static_cast<GridSamplerInterpolation>(interpolation_mode),
@@ -907,11 +1049,14 @@ Tensor grid_sampler_3d_cpu(const Tensor& input, const Tensor& grid,
   });
 }
 
-// No shape checking needed here. See # NOTE [ grid_sampler Native Functions ].
 std::tuple<Tensor, Tensor>
 grid_sampler_2d_backward_cpu(const Tensor& grad_output, const Tensor& input, const Tensor& grid,
                              int64_t interpolation_mode, int64_t padding_mode, bool align_corners,
                              std::array<bool,2> output_mask) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_2d_stub(input, grid);
 
   // AVX gather instructions use signed 32-bit offsets to gather float values.
   // Check for possible overflow and fallback to scalar implementation
@@ -953,11 +1098,17 @@ grid_sampler_2d_backward_cpu(const Tensor& grad_output, const Tensor& input, con
 
 DEFINE_DISPATCH(grid_sampler_2d_backward_cpu_kernel);
 
-// No shape checking needed here. See # NOTE [ grid_sampler Native Functions ].
 std::tuple<Tensor, Tensor>
 grid_sampler_3d_backward_cpu(const Tensor& grad_output, const Tensor& input, const Tensor& grid,
                              int64_t interpolation_mode, int64_t padding_mode, bool align_corners,
                              std::array<bool,2> output_mask) {
+  // See NOTE [ grid_sampler Native Functions ].
+  // Add checks here in case this is called instead of grid_sampler.
+  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_3d_stub(
+    input,
+    grid,
+    static_cast<GridSamplerInterpolation>(interpolation_mode));
 
   return AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "grid_sampler_3d_backward_cpu", [&] {
     return grid_sampler_3d_backward_cpu_impl<scalar_t>(
@@ -968,62 +1119,29 @@ grid_sampler_3d_backward_cpu(const Tensor& grad_output, const Tensor& input, con
   });
 }
 
-Tensor grid_sampler(const Tensor& input, const Tensor& grid,
-                    int64_t interpolation_mode, int64_t padding_mode,
-                    bool align_corners) {
-  TORCH_CHECK(
-    input.defined() && grid.defined(),
-    "grid_sampler(): expected input and grid to not be undefined, but input "
-    "is ", input, " and grid is ", grid);
-  auto input_opt = input.options();
-  auto grid_opt = grid.options();
-  TORCH_CHECK(
-    input_opt.device() == grid_opt.device(),
-    "grid_sampler(): expected input and grid to be on same device, but input "
-    "is on ", input_opt.device(), " and grid is on ", grid_opt.device());
-  TORCH_CHECK(
-    input_opt.layout() == kStrided && grid_opt.layout() == kStrided,
-    "grid_sampler(): expected input and grid to have torch.strided layout, but "
-    "input has ", input_opt.layout(), " and grid has ", grid_opt.layout());
-  TORCH_CHECK(
-    (input.dim() == 4 || input.dim() == 5) && input.dim() == grid.dim(),
-    "grid_sampler(): expected 4D or 5D input and grid with same number of "
-    "dimensions, but got input with sizes ", input.sizes(),
-    " and grid with sizes ", grid.sizes());
-  TORCH_CHECK(
-    input.size(0) == grid.size(0),
-    "grid_sampler(): expected grid and input to have same batch size, but got "
-    "input with sizes ", input.sizes(), " and grid with sizes ", grid.sizes());
-  TORCH_CHECK(
-    grid.size(-1) == input.dim() - 2,
-    "grid_sampler(): expected grid to have size ", input.dim() - 2, " in last "
-    "dimension, but got grid with sizes ", grid.sizes());
-  TORCH_CHECK(
-    !(input.dim() == 5 && static_cast<GridSamplerInterpolation>(interpolation_mode) == GridSamplerInterpolation::Bicubic),
-    "grid_sampler(): bicubic interpolation only supports 4D input"
-  );
-  for (const auto i : c10::irange(2, input.dim())) {
-    TORCH_CHECK(input.size(i) > 0,
-      "grid_sampler(): expected input to have non-empty spatial dimensions, "
-      "but input has sizes ", input.sizes(), " with dimension ", i, " being "
-      "empty");
-  }
-  // cudnn does not support inputs larger than 1024
-  if (at::native::cudnn_is_acceptable(input) &&
-      at::native::cudnn_is_acceptable(grid) &&
-      at::native::canUse32BitIndexMath(input) &&
-      at::native::canUse32BitIndexMath(grid) &&
-      static_cast<GridSamplerInterpolation>(interpolation_mode) == GridSamplerInterpolation::Bilinear &&
-      static_cast<GridSamplerPadding>(padding_mode) == GridSamplerPadding::Zeros &&
-      align_corners &&
-      input.dim() == 4 &&
-      input.size(1) <= 1024) {
+// See NOTE [ grid_sampler Native Functions ].
+Tensor grid_sampler(
+  const Tensor& input,
+  const Tensor& grid,
+  int64_t interpolation_mode,
+  int64_t padding_mode,
+  bool align_corners
+) {
+  if (cond_cudnn_grid_sampler_stub(input, grid) &&
+      static_cast<GridSamplerInterpolation>(interpolation_mode) ==
+        GridSamplerInterpolation::Bilinear &&
+      static_cast<GridSamplerPadding>(padding_mode) ==
+        GridSamplerPadding::Zeros &&
+      align_corners) {
     return cudnn_grid_sampler(input, grid);
   }
+
   if (input.dim() == 4) {
-    return at::grid_sampler_2d(input, grid, interpolation_mode, padding_mode, align_corners);
+    return at::grid_sampler_2d(
+      input, grid, interpolation_mode, padding_mode, align_corners);
   } else {
-    return at::grid_sampler_3d(input, grid, interpolation_mode, padding_mode, align_corners);
+    return at::grid_sampler_3d(
+      input, grid, interpolation_mode, padding_mode, align_corners);
   }
 }
 

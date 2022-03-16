@@ -1402,6 +1402,29 @@ else:
 
         backward_func(self, device)
 
+    def test_invalid_shapes_grid_sampler_3d(self, device):
+        make_arg = partial(
+            make_tensor, device=device, dtype=torch.float64, requires_grad=True)
+
+        input = make_arg((5, 5, 5, 5, 5,))
+        grid  = make_arg((1, 1, 1, 4, 4,), low=-1, high=1)
+        interpolation_mode = 0
+        padding_mode = 0
+        align_corners = True
+        with self.assertRaisesRegex(RuntimeError, ""):
+            torch.grid_sampler(
+                input, grid, interpolation_mode, padding_mode, align_corners)
+
+    # def test_shapes_grid_sampler_2d(self, device):
+    #     input = torch.full((5, 5, 5, 5,), 1, deivce=device, dtype=torch.float64, requires_grad=True)
+    #     grid  = torch.full((1, 1, 4, 4,), 1, deivce=device, dtype=torch.float64, requires_grad=True)
+    #     interpolation_mode = 0
+    #     padding_mode = 0
+    #     align_corners = True
+    #     with self.assertRaisesRegex(RuntimeError, ""):
+    #         torch.grid_sampler(
+    #             input, grid, interpolation_mode, padding_mode, align_corners)
+
     def test_embedding_scalar_weight_error(self, device):
         indices = torch.rand(2, 2, device=device).long()
         weights = [
