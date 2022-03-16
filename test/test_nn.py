@@ -10179,7 +10179,7 @@ class TestNN(NNTestCase):
             W = random.randint(2, IW)
             test_shape(N, C, IH, IW, H, W, mode, padding_mode, align_corners)
 
-            # test 1x1 inpput
+            # test 1x1 input
             N = random.randint(2, 8)
             C = random.randint(2, 8)
             IH = 1

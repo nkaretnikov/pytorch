@@ -7,6 +7,8 @@
 
 namespace at { namespace native {
 
+// bool canUse32BitIndexMath(const TensorBase& t, int64_t max_elem);
+
 [[noreturn]]
 static void invalid_mask(const Tensor & self, int64_t idx, const Tensor & mask, int64_t maskIdx) {
   TORCH_CHECK_INDEX(false, "The shape of the mask ", mask.sizes(), " at index ", maskIdx,
