@@ -131,8 +131,9 @@ namespace {
                                   bool align_corners) {
     // See NOTE [ grid_sampler Native Functions ].
     // Add checks here in case this is called instead of grid_sampler.
-    check_grid_sampler_common_stub(input, grid);
-    check_grid_sampler_3d_stub(input, grid, interpolation_mode);
+    check_grid_sampler_common_stub(input.device().type(), input, grid);
+    check_grid_sampler_3d_stub(
+      input.device().type(), input, grid, interpolation_mode);
 
     int64_t N = input.size(0);
     int64_t C = input.size(1);
@@ -292,8 +293,9 @@ namespace {
                                     bool align_corners, std::array<bool,2> output_mask) {
     // See NOTE [ grid_sampler Native Functions ].
     // Add checks here in case this is called instead of grid_sampler.
-    check_grid_sampler_common_stub(input, grid);
-    check_grid_sampler_3d_stub(input, grid, interpolation_mode);
+    check_grid_sampler_common_stub(input.device().type(), input, grid);
+    check_grid_sampler_3d_stub(
+      input.device().type(), input, grid, interpolation_mode);
 
     auto input_requires_grad = output_mask[0];
     Tensor grad_input = ([&]() {
@@ -529,8 +531,8 @@ Tensor _grid_sampler_2d_cpu_quantized(
     bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   auto interpolation_mode =
       static_cast<GridSamplerInterpolation>(interpolation_mode_);
@@ -638,8 +640,8 @@ Tensor _grid_sampler_2d_cpu_fallback(const Tensor& input, const Tensor& grid,
                                      bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   auto interpolation_mode = static_cast<GridSamplerInterpolation>(interpolation_mode_);
   auto padding_mode = static_cast<GridSamplerPadding>(padding_mode_);
@@ -791,8 +793,8 @@ _grid_sampler_2d_cpu_fallback_backward(const Tensor& grad_output,
                                        bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   const auto interpolation_mode = static_cast<GridSamplerInterpolation>(interpolation_mode_);
   const auto padding_mode = static_cast<GridSamplerPadding>(padding_mode_);
@@ -992,8 +994,8 @@ Tensor grid_sampler_2d_cpu(const Tensor& input, const Tensor& grid,
                            bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   if (input.scalar_type() == kQUInt8) {
     return native::_grid_sampler_2d_cpu_quantized(
@@ -1036,10 +1038,9 @@ Tensor grid_sampler_3d_cpu(const Tensor& input, const Tensor& grid,
                            bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
   check_grid_sampler_3d_stub(
-    input,
-    grid,
+    input.device().type(), input, grid,
     static_cast<GridSamplerInterpolation>(interpolation_mode));
 
   return AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "grid_sampler3d_cpu", [&] {
@@ -1055,8 +1056,8 @@ grid_sampler_2d_backward_cpu(const Tensor& grad_output, const Tensor& input, con
                              std::array<bool,2> output_mask) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   // AVX gather instructions use signed 32-bit offsets to gather float values.
   // Check for possible overflow and fallback to scalar implementation
@@ -1104,10 +1105,9 @@ grid_sampler_3d_backward_cpu(const Tensor& grad_output, const Tensor& input, con
                              std::array<bool,2> output_mask) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
   check_grid_sampler_3d_stub(
-    input,
-    grid,
+    input.device().type(), input, grid,
     static_cast<GridSamplerInterpolation>(interpolation_mode));
 
   return AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "grid_sampler_3d_backward_cpu", [&] {
@@ -1127,7 +1127,7 @@ Tensor grid_sampler(
   int64_t padding_mode,
   bool align_corners
 ) {
-  if (cond_cudnn_grid_sampler_stub(input, grid) &&
+  if (cond_cudnn_grid_sampler_stub(input.device().type(), input, grid) &&
       static_cast<GridSamplerInterpolation>(interpolation_mode) ==
         GridSamplerInterpolation::Bilinear &&
       static_cast<GridSamplerPadding>(padding_mode) ==

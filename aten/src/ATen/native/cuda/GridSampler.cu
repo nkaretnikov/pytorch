@@ -763,8 +763,8 @@ void launch_grid_sampler_2d_forward_kernel(
     int64_t interpolation_mode, int64_t padding_mode, bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   auto N = input.size(0);
   auto H = grid.size(1);
@@ -805,10 +805,9 @@ void launch_grid_sampler_3d_forward_kernel(
     int64_t interpolation_mode, int64_t padding_mode, bool align_corners) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
   check_grid_sampler_3d_stub(
-    input,
-    grid,
+    input.device().type(), input, grid,
     static_cast<GridSamplerInterpolation>(interpolation_mode));
 
   auto N = input.size(0);
@@ -853,8 +852,8 @@ void launch_grid_sampler_2d_backward_kernel(
     bool align_corners, std::array<bool,2> output_mask) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
-  check_grid_sampler_2d_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
+  check_grid_sampler_2d_stub(input.device().type(), input, grid);
 
   // See Note [Writing Nondeterministic Operations]
   // Nondeterministic because of atomicAdd usage
@@ -914,10 +913,9 @@ void launch_grid_sampler_3d_backward_kernel(
     bool align_corners, std::array<bool,2> output_mask) {
   // See NOTE [ grid_sampler Native Functions ].
   // Add checks here in case this is called instead of grid_sampler.
-  check_grid_sampler_common_stub(input, grid);
+  check_grid_sampler_common_stub(input.device().type(), input, grid);
   check_grid_sampler_3d_stub(
-    input,
-    grid,
+    input.device().type(), input, grid,
     static_cast<GridSamplerInterpolation>(interpolation_mode));
 
   // See Note [Writing Nondeterministic Operations]
