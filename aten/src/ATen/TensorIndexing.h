@@ -362,6 +362,10 @@ static inline void copy_to(const Tensor& dst, const Tensor& src) {
   dst.copy_(*b_src);
 }
 
+// Keep track of the dimension of the previously passed tensor.
+// https://github.com/pytorch/pytorch/issues/71673
+static int64_t prev_tensor_dim = -1;
+
 // See NOTE [ Setting `disable_slice_optimization` when calling C++ tensor indexing functions from Python ]
 static inline Tensor handleDimInMultiDimIndexing(
     const Tensor& prev_dim_result,
@@ -375,7 +379,16 @@ static inline Tensor handleDimInMultiDimIndexing(
     const at::Device& original_tensor_device,
     const IntArrayRef& prev_dim_result_sizes) {
   if (index.is_integer()) {
-    return impl::applySelect(prev_dim_result, *dim_ptr, index.integer(), real_dim, original_tensor_device, prev_dim_result_sizes);
+    int64_t old_dim = *dim_ptr;
+    // Perform the view operation based on the dimension of the mask tensor.
+    // For instance, t[m,0] == t[:,:,0][m] where m is a 2D tensor.
+    if (prev_tensor_dim != -1) {
+      *dim_ptr = prev_tensor_dim;
+    }
+    auto result = impl::applySelect(prev_dim_result, *dim_ptr, index.integer(), real_dim, original_tensor_device, prev_dim_result_sizes);
+    *dim_ptr = old_dim;
+    prev_tensor_dim = -1;
+    return result;
   } else if (index.is_slice()) {
     Tensor result = impl::applySlice(
       prev_dim_result,
@@ -416,6 +429,11 @@ static inline Tensor handleDimInMultiDimIndexing(
       }
     } else {
       impl::recordTensorIndex(tensor, outIndices, dim_ptr);
+    }
+    // The case t[m,0,n,1] where m and n are 1D tensors works fine as is, so do
+    // not do anything.
+    if (tensor.dim() != 1) {
+      prev_tensor_dim = tensor.dim();
     }
     return result;
   } else {
