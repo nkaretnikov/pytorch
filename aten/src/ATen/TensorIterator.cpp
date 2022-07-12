@@ -948,6 +948,7 @@ void TensorIteratorBase::build_ternary_op(
   build(TensorIteratorConfig()
       .promote_inputs_to_common_dtype(true)
       .enforce_safe_casting_to_output(true)
+      .promote_integer_inputs_to_float(true)
       .add_owned_output(out)
       .add_owned_input(a)
       .add_owned_input(b)
