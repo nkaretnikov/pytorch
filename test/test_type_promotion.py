@@ -723,7 +723,18 @@ class TestTypePromotion(TestCase):
     @dtypes(torch.bool, torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
     @float_double_default_dtype
     def test_div_promotion(self, device, dtype):
-        for op in (torch.div, torch.true_divide):
+        # Make sure addcdiv behavior is consistent with div
+        def addcdiv_zero(tensor1, tensor2):
+            input = torch.zeros(5, device=device).to(dtype)
+            return torch.addcdiv(input=input, tensor1=tensor1, tensor2=tensor2)
+
+        ops = (
+            (True, torch.div),
+            (True, torch.true_divide),
+            (False, addcdiv_zero),
+        )
+
+        for scalar_supported, op in ops:
             dividend = (torch.randn(5, device=device) * 100).to(dtype)
             divisor = torch.arange(1, 6, device=device).to(dtype)
 
@@ -732,14 +743,27 @@ class TestTypePromotion(TestCase):
             self.assertEqual(casting_result, op(dividend, divisor))
 
             # Tests tensor/scalar division
-            casting_result = dividend.to(torch.get_default_dtype()) / 2
-            self.assertEqual(casting_result, op(dividend, 2.))
+            if scalar_supported:
+                casting_result = dividend.to(torch.get_default_dtype()) / 2
+                self.assertEqual(casting_result, op(dividend, 2.))
 
     @onlyNativeDeviceTypes
     @dtypes(torch.float, torch.double,
             torch.bool, torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
     def test_div_promotion_out(self, device, dtype):
-        for op in (torch.div, torch.true_divide):
+        # Make sure addcdiv behavior is consistent with div
+        def addcdiv_zero(tensor1, tensor2, out):
+            input = torch.zeros(5, device=device).to(dtype)
+            return torch.addcdiv(
+                input=input, tensor1=tensor1, tensor2=tensor2, out=out)
+
+        ops = (
+            (True, torch.div),
+            (True, torch.true_divide),
+            (False, addcdiv_zero),
+        )
+
+        for scalar_supported, op in ops:
             dividend = (torch.randn(5, device=device) * 100).to(dtype)
             divisor = torch.arange(1, 6, device=device).to(dtype)
 
@@ -748,21 +772,35 @@ class TestTypePromotion(TestCase):
                 integral_quotient = torch.empty(5, device=device, dtype=dtype)
                 with self.assertRaises(RuntimeError):
                     op(dividend, divisor, out=integral_quotient)
-                with self.assertRaises(RuntimeError):
-                    op(dividend, 2, out=integral_quotient)
+                if scalar_supported:
+                    with self.assertRaises(RuntimeError):
+                        op(dividend, 2, out=integral_quotient)
             else:
                 # Tests that requests for a floating quotient succeed
                 floating_quotient = torch.empty(5, device=device, dtype=dtype)
                 div_result = dividend / divisor
                 self.assertEqual(div_result,
                                  op(dividend, divisor, out=floating_quotient))
-                self.assertEqual(dividend / 2,
-                                 op(dividend, 2, out=floating_quotient))
+                if scalar_supported:
+                    self.assertEqual(dividend / 2,
+                                     op(dividend, 2, out=floating_quotient))
 
     @dtypes(torch.float, torch.double,
             torch.bool, torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
     def test_div_promotion_inplace(self, device, dtype):
-        for op in (torch.Tensor.div_, torch.Tensor.true_divide_):
+        # Make sure addcdiv behavior is consistent with div
+        def addcdiv_zero(tensor1, tensor2):
+            input = torch.zeros(5, device=device).to(dtype)
+            return torch.Tensor.addcdiv_(
+                input, tensor1=tensor1, tensor2=tensor2)
+
+        ops = (
+            (True, torch.Tensor.div_),
+            (True, torch.Tensor.true_divide_),
+            (False, addcdiv_zero),
+        )
+
+        for scalar_supported, op in ops:
             dividend = (torch.randn(5, device=device) * 100).to(dtype)
             divisor = torch.arange(1, 6, device=device).to(dtype)
 
@@ -770,13 +808,16 @@ class TestTypePromotion(TestCase):
             if not dtype.is_floating_point:
                 with self.assertRaises(RuntimeError):
                     op(dividend, divisor)
-                with self.assertRaises(RuntimeError):
-                    op(dividend, 2)
+                if scalar_supported:
+                    with self.assertRaises(RuntimeError):
+                        op(dividend, 2)
             else:
                 # Tests that requests for a floating quotient succeed
                 div_result = dividend.clone().div_(divisor)
                 self.assertEqual(div_result, op(dividend.clone(), divisor))
-                self.assertEqual(dividend.clone().div_(2), op(dividend.clone(), 2))
+                if scalar_supported:
+                    self.assertEqual(
+                        dividend.clone().div_(2), op(dividend.clone(), 2))
 
     def _test_sparse_op_input_tensors(self, device, dtype, coalesced, zeros=True):
         t = self._get_test_tensor(device, dtype, not zeros)
