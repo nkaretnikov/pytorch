@@ -340,14 +340,9 @@ addcdiv(input, tensor1, tensor2, *, value=1, out=None) -> Tensor
 Performs the element-wise division of :attr:`tensor1` by :attr:`tensor2`,
 multiply the result by the scalar :attr:`value` and add it to :attr:`input`.
 
-.. warning::
-    Integer division with addcdiv is no longer supported, and in a future
-    release addcdiv will perform a true division of tensor1 and tensor2.
-    The historic addcdiv behavior can be implemented as
-    (input + value * torch.trunc(tensor1 / tensor2)).to(input.dtype)
-    for integer inputs and as (input + value * tensor1 / tensor2) for float inputs.
-    The future addcdiv behavior is just the latter implementation:
-    (input + value * tensor1 / tensor2), for all dtypes.
+.. note::
+    By default, this performs a "true" division like Python 3.
+    See :func:`torch.div` with ``rounding_mode=None``.
 
 .. math::
     \text{out}_i = \text{input}_i + \text{value} \times \frac{\text{tensor1}_i}{\text{tensor2}_i}
