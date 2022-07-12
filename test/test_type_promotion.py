@@ -961,18 +961,6 @@ class TestTypePromotion(TestCase):
             casting_result = dividend.to(torch.get_default_dtype()) / 2
             self.assertEqual(casting_result, op(dividend_sparse, 2).to_dense())
 
-    @onlyNativeDeviceTypes
-    @dtypes(torch.int8, torch.uint8, torch.int16, torch.int32, torch.int64)
-    def test_integer_addcdiv_deprecated(self, device, dtype):
-        t = torch.tensor(1, device=device, dtype=dtype)
-
-        with self.assertRaisesRegex(RuntimeError, '^Integer division.+is no longer supported.+'):
-            torch.addcdiv(t, t, t)
-        with self.assertRaisesRegex(RuntimeError, '^Integer division.+is no longer supported.+'):
-            torch.addcdiv(t, t, t, out=t)
-        with self.assertRaisesRegex(RuntimeError, '^Integer division.+is no longer supported+'):
-            t.addcdiv_(t, t)
-
     @unittest.skipIf(not TEST_NUMPY, "NumPy not found")
     @float_double_default_dtype
     @onlyCPU
