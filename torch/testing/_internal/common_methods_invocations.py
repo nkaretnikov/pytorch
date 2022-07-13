@@ -10884,7 +10884,7 @@ op_db: List[OpInfo] = [
            reference_inputs_func=reference_inputs_addcmul_addcdiv),
     OpInfo('addcdiv',
            dtypes=all_types_and_complex_and(torch.bool, torch.bfloat16),
-           dtypesIfCUDA=all_types_and_complex_and(torch.bool, torch.half, torch.bfloat16),
+           dtypesIfCUDA=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
            skips=(
