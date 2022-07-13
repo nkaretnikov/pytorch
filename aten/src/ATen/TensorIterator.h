@@ -558,7 +558,15 @@ struct TORCH_API TensorIteratorBase : public impl::MetaBase {
       const TensorBase& out,
       const TensorBase& a,
       const TensorBase& b);
+  // Similar to build_borrowing_binary_op, which is used by mul
   void build_ternary_op(
+      const TensorBase& out,
+      const TensorBase& a,
+      const TensorBase& b,
+      const TensorBase& c);
+// Similar to build_borrowing_binary_float_op, which is used by div to support
+// "true" division (like Python 3)
+  void build_ternary_float_op(
       const TensorBase& out,
       const TensorBase& a,
       const TensorBase& b,

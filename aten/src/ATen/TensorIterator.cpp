@@ -942,7 +942,22 @@ void TensorIteratorBase::build_borrowing_except_last_argument_comparison_op(
   build(config);
 }
 
+// Similar to build_borrowing_binary_op, which is used by mul
 void TensorIteratorBase::build_ternary_op(
+    const TensorBase& out, const TensorBase& a,
+    const TensorBase& b, const TensorBase& c) {
+  build(TensorIteratorConfig()
+      .promote_inputs_to_common_dtype(true)
+      .enforce_safe_casting_to_output(true)
+      .add_owned_output(out)
+      .add_owned_input(a)
+      .add_owned_input(b)
+      .add_owned_input(c));
+}
+
+// Similar to build_borrowing_binary_float_op, which is used by div to support
+// "true" division (like Python 3)
+void TensorIteratorBase::build_ternary_float_op(
     const TensorBase& out, const TensorBase& a,
     const TensorBase& b, const TensorBase& c) {
   build(TensorIteratorConfig()

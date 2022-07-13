@@ -24,7 +24,7 @@ TORCH_META_FUNC(addcdiv)
  const Tensor& tensor1,
  const Tensor& tensor2,
  const Scalar& value) {
-  build_ternary_op(maybe_get_output(), self, tensor1, tensor2);
+  build_ternary_float_op(maybe_get_output(), self, tensor1, tensor2);
 }
 
 } // namespace meta
