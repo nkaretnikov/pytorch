@@ -3965,12 +3965,7 @@ else:
                     UserWarning, "This overload of addcdiv is deprecated"):
                 self.assertEqual(actual, torch.addcdiv(a, alpha, b, c))
 
-        if not (dtype.is_floating_point or dtype.is_complex):
-            # Integer division with addcdiv is prohibited
-            with self.assertRaises(RuntimeError):
-                _test_addcdiv()
-        else:
-            _test_addcdiv()
+        _test_addcdiv()
 
         if self.device_type == 'cuda' and dtype == torch.half:
             a = torch.tensor([60000.0], device=device, dtype=dtype)
