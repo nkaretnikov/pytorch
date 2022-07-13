@@ -78,7 +78,8 @@ static void addcdiv_cpu_kernel(TensorIteratorBase& iter, const Scalar& value) {
       auto scalar_vec = Vectorized<scalar_t>(scalar_val);
       cpu_kernel_vec(
           iter,
-          [=](scalar_t self_val, scalar_t t1_val, scalar_t t2_val) -> scalar_t {
+          [=](scalar_t self_val, scalar_t t1_val, scalar_t t2_val)
+            __ubsan_ignore_float_divide_by_zero__ -> scalar_t {
             return self_val + scalar_val * t1_val / t2_val;
           },
           [=](Vectorized<scalar_t> self_vec,
