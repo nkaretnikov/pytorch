@@ -65,6 +65,9 @@ torch_function_passthrough = {
     torch.Tensor.__repr__,
     torch.Tensor.requires_grad.__get__,  # type: ignore[attr-defined]
     torch.Tensor.__setitem__,  # XXX: for eye ref
+    torch.Tensor.dim,  # XXX: for diagonal ref
+    torch.Tensor.storage_offset,  # XXX: for diagonal ref
+    torch.Tensor.size,  # XXX: for diagonal ref
 }
 
 
