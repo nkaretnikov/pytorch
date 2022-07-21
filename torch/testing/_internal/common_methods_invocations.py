@@ -21266,6 +21266,11 @@ python_ref_db = [
         supports_nvfuser=False,
     ),
     PythonRefInfo(
+        "_refs.diag_embed",
+        torch_opinfo_name="diag_embed",
+        supports_nvfuser=False,
+    ),
+    PythonRefInfo(
         "_refs.dstack",
         torch_opinfo_name="dstack",
         supports_nvfuser=False,
