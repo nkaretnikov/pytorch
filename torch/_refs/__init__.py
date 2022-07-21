@@ -2923,6 +2923,22 @@ def ravel(a: TensorLikeType) -> TensorLikeType:
     return reshape(a, (-1,))
 
 
+@register_decomposition(torch.ops.aten.new_empty)
+def new_empty(
+    self: TensorLikeType,
+    size: Union[torch.Size, List[int], Tuple[int, ...]],
+    dtype: Optional[torch.dtype] = None,
+    device: Optional[torch.device] = None,
+    requires_grad: bool = False,
+) -> TensorLikeType:
+    dtype = dtype if dtype else self.dtype
+    device = device if device else self.device
+
+    return torch.empty(
+        size=size, dtype=dtype, layout=self.layout, device=device,
+        pin_memory=self.pin_memory, requires_grad=requires_grad)
+
+
 @out_wrapper()
 def empty(
     *shape,

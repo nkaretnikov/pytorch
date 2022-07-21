@@ -21433,6 +21433,12 @@ python_ref_db = [
             DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_python_ref_executor'),
         ),
     ),
+    PythonRefInfo(
+        "_refs.new_empty",
+        torch_opinfo_name="new_empty",
+        supports_out=True,
+        supports_nvfuser=False,
+    ),
     #
     # Conditional Reference OpInfos
     #
