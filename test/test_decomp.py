@@ -411,6 +411,26 @@ class TestDecomp(TestCase):
 
                 decomposition = decomposition_table[func]
 
+                # XXX: Testing incompatible 'func' and 'decomposition' with
+                # arguments supplied by 'func' (the ATen op).
+
+                # XXX: This 'func' has a generic type signature, but we can
+                # check the type information earlier in 'register_decomposition'
+                # (pro: it's done once during initialization) or store it in
+                # 'decomposition_table' (pro: this will always be checked even
+                # if other decorators are added).
+                import inspect
+                print(f"XXX: FUNC: {inspect.signature(func)}")
+                print(f"XXX: DECOMP: {inspect.signature(decomposition)}")
+                print(f"XXX: ARGS: {args}")
+                print(f"XXX: KWARGS: {kwargs}")
+
+                # XXX: The '2' that you'll see in 'args' here is actually "sum"
+                # from the test that's converted to an integer (by 'get_enum'):
+                #
+                # elif reduction == 'sum':
+                #     ret = 2
+
                 do_relative_check = test_dtype in [torch.float16, torch.bfloat16]
                 real_out_unflat = func(*args, **kwargs)
                 real_out, _ = tree_flatten(real_out_unflat)

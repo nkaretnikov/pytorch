@@ -3396,6 +3396,7 @@ def soft_margin_loss(
 
     See :class:`~torch.nn.SoftMarginLoss` for details.
     """
+    print(f"XXX: PYTHON FRONTEND: size_average: {size_average}, reduce: {reduce}, reduction: {reduction}")
     if has_torch_function_variadic(input, target):
         return handle_torch_function(
             soft_margin_loss, (input, target), input, target, size_average=size_average, reduce=reduce, reduction=reduction

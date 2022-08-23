@@ -6791,13 +6791,16 @@ def sample_inputs_loss(op_info, device, dtype, requires_grad, **kwargs):
 
     # Although most losses also support the reduce and size_average combination instead of reduce, the former is
     # deprecated since 0.4.1 and thus is not tested
+
+    # XXX: Create one sample with a 'reduction' value that's different from
+    # the default, so it's easier to see.
     shapes_and_kwargs = (
-        ((), None),
-        ((S,), dict(reduction="mean")),
+        # ((), None),
+        # ((S,), dict(reduction="mean")),
         ((S,), dict(reduction="sum")),
-        ((S,), dict(reduction="none")),
-        ((S, S), None),
-        ((S, S, S), None),
+        # ((S,), dict(reduction="none")),
+        # ((S, S), None),
+        # ((S, S, S), None),
     )
 
     for shape, kwargs in shapes_and_kwargs:

@@ -234,6 +234,38 @@ def selu(a: TensorLikeType, inplace: bool = False) -> TensorLikeType:
     return scale * torch.where(a > 0, a, rhs)
 
 
+# XXX: Incorrectly registered decomposition.
+#
+# The ATen schema here doesn't match the Python frontend signature (and this ref
+# signature).  The 'reduction' argument (after being converted to an integer) is
+# passed here during testing as 'size_average'.  Because of the way the code is
+# written, it results in different output, so it's detected by the testsuite.
+# But there could be cases (now or later) where this would just continue
+# executing (incorrectly) due to the way the code is written and/or poor
+# testing.
+#
+# This signature mismatch also prevents you from having one Python function that
+# you can register as a ref via 'PythonRefInfo' and as a decomposition via
+# 'register_decomposition'.  So the existing functions with a similar type
+# signature mismatch issue, e.g., 'binary_cross_entropy', only do the latter.
+#
+# One known case is loss functions, but most of them don't need to be registered
+# because they are composite-compliant (they use 'CompositeImplicitAutograd' aka
+# have no explicit dispatch in 'native_functions.yaml').
+#
+# Technically, this could be detected by checking the signatures of the ATen op
+# and the Python code in the 'register_decomposition' decorator, but we need a
+# way to convert the schema type format to the Python type format, then we could
+# compare them:
+#
+# import torch
+# import inspect
+# aten_op = torch.ops.aten.soft_margin_loss
+# op_overload = getattr(aten_op, aten_op.overloads()[0])
+# op_overload._schema
+# print(op_overload._schema)  # XXX: have a way to convert this to Python format
+# print(inspect.signature(torch._refs.nn.functional.soft_margin_loss))
+# ^ could compare these if compatible formats were used
 @register_decomposition(torch.ops.aten.soft_margin_loss)
 @elementwise_type_promotion_wrapper(
     type_promoting_args=("input", "target"),
@@ -249,6 +281,7 @@ def soft_margin_loss(
     """
     Reference implementation of torch.nn.functional.soft_margin_loss
     """
+    print(f"XXX: REF: size_average: {size_average}, reduce: {reduce}, reduction: {reduction}")
     if size_average is not None or reduce is not None:
         # TODO: raise exception instead of converting value
         # msg = "size_average and reduce args are deprecated, please use reduction argument."
