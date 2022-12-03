@@ -2010,8 +2010,14 @@ def upsample_bilinear2d(
     else:
         w_scale_factor = 0.0
 
-    i = torch.arange(sym_int(out_h), dtype=input.dtype, device=input.device)
-    j = torch.arange(sym_int(out_w), dtype=input.dtype, device=input.device)
+    # XXX: Force the computation. This is likely not what we want to do here,
+    # but the output should be identical, no?
+    # Pprinter/codegen bug:
+    # tmp1 = ((-1)*) + (ks0*)
+    #              ^
+    # SyntaxError: invalid syntax
+    i = torch.arange(guard_int(sym_int(out_h)), dtype=input.dtype, device=input.device)
+    j = torch.arange(guard_int(sym_int(out_w)), dtype=input.dtype, device=input.device)
 
     if align_corners:
         x = h_scale_factor * i
