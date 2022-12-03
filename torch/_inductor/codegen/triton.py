@@ -56,7 +56,14 @@ def signature_of(arg):
         else:
             return tye
     if isinstance(arg, SizeArg):
-        return JITFunction._key_of(V.graph.sizevars.size_hint(arg.expr))
+        hint = V.graph.sizevars.size_hint(arg.expr)
+        if isinstance(hint, sympy.Expr):
+            # TODO: Is this okay? See _key_of in triton.
+            if hint.is_integer:
+                return "i64"
+            else:
+                return "fp32"
+        return JITFunction._key_of(hint)
     raise NotImplementedError(f"unhandled {type(arg)}: {arg}")
 
 

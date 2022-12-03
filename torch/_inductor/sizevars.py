@@ -363,9 +363,11 @@ class SizeVarAllocator(object):
     def __getitem__(self, val: int) -> Expr:
         return self.shape_env.duck_int(val)
 
-    def size_hint(self, expr: Expr) -> int:
+    def size_hint(self, expr: Expr) -> Expr:
         out = sympy_subs(sympy.expand(expr), self.var_to_val)
-        return int(out)
+        # This might be a sympy Symbol in some cases, so we cannot convert to
+        # int here.
+        return out
 
     def _lru_cache(self, fn, maxsize=None):
         """

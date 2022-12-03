@@ -19,7 +19,7 @@ from torch._prims_common.wrappers import (
     _safe_copy_out,
     out_wrapper,
 )
-from torch.fx.experimental.symbolic_shapes import guard_int, sym_float, sym_int
+from torch.fx.experimental.symbolic_shapes import guard_int, sym_float
 from torch.utils._pytree import tree_flatten, tree_map
 
 DispatchKey = torch._C.DispatchKey  # type: ignore[attr-defined]
@@ -1988,9 +1988,28 @@ def upsample_compute_output_size(input_size, output_size, scale_factors):
         )
         utils.check(len(scale_factors) == spatial_dimensions, lambda: "")
         return [
-            # Returning output_size as float. We cannot convert it to int directly,
-            # as latter computation of scale_factor is relying output size being float
-            sym_float(input_size[i + 2] * scale_factors[i])
+            # XXX: The int call below is not correct since it will discard info
+            # if an FP number has non-zeros after the dot. We are only testing
+            # with 2.0, so this is a good first step towards fixing this the
+            # right way. Next, I would try comparing float and int codegen if
+            # you can get it to JIT-compile.
+            #
+            # Or we could try flooring like this instead, but it fails on CPU
+            # while the int version doesn't. We use floordiv here because it has
+            # a lowering already and works for symbols. Another option would be
+            # doing sympy.floor() since math.floor() doesn't work for symbols.
+            #
+            # ((input_size[i + 2] * scale_factors[i]) // 1)
+            #
+            # error: invalid controlling predicate
+            #    for(long i0=0; i0<(-1)*ks0*(floor(-2.0*ks1)); i0+=1)
+            #
+            # On CUDA, the int code fails due to recent changes in the triton
+            # codegen, but there are likely more problems since it used to fail
+            # before with a numerical accuracy error:
+            # torch/_inductor/codegen/triton.py", line 758, in indexing
+            # assert var.name[0] in "xyr", var.name
+            sym_float(input_size[i + 2] * int(scale_factors[i]))
             for i in range(spatial_dimensions)
         ]
     utils.check(
@@ -2034,26 +2053,35 @@ def upsample_bilinear2d(
     out_w = sym_float(output_size[1])
 
     # Calculate horizontal and vertical scaling factor
-    # TODO: Figure out if scales_h/scales_w matters here
-    if out_h > 1:
-        if align_corners:
-            h_scale_factor = (in_h - 1) / (sym_int(out_h) - 1)
+    # See compute_scales_value and area_pixel_compute_scale in core.
+    # XXX: FP constants are important here. Otherwise, the output doesn't match
+    # on CPU.
+    if align_corners:
+        if out_h > 1:
+            h_scale_factor = (in_h - 1) / (out_h - 1.0)
+        else:
+            h_scale_factor = 0
+    else:
+        if scales_h is not None and scales_h > 0.0:
+            h_scale_factor = 1.0 / scales_h
         else:
             h_scale_factor = in_h / out_h
-    else:
-        h_scale_factor = 0.0
 
-    if out_w > 1:
-        if align_corners:
-            w_scale_factor = (in_w - 1) / (sym_int(out_w) - 1)
+    if align_corners:
+        if out_w > 1:
+            w_scale_factor = (in_w - 1) / (out_w - 1.0)
+        else:
+            w_scale_factor = 0
+    else:
+        if scales_w is not None and scales_w > 0.0:
+            w_scale_factor = 1.0 / scales_w
         else:
             w_scale_factor = in_w / out_w
-    else:
-        w_scale_factor = 0.0
 
-    i = torch.arange(sym_int(out_h), dtype=input.dtype, device=input.device)
-    j = torch.arange(sym_int(out_w), dtype=input.dtype, device=input.device)
+    i = torch.arange(out_h, dtype=input.dtype, device=input.device)
+    j = torch.arange(out_w, dtype=input.dtype, device=input.device)
 
+    # See area_pixel_compute_source_index in core.
     if align_corners:
         x = h_scale_factor * i
         y = w_scale_factor * j
@@ -2061,10 +2089,10 @@ def upsample_bilinear2d(
         x = (h_scale_factor * (i + 0.5) - 0.5).clamp(min=0.0)
         y = (w_scale_factor * (j + 0.5) - 0.5).clamp(min=0.0)
 
-    x_floor = torch.floor(x).to(torch.int64)
-    x_ceil = torch.ceil(x).clamp(max=in_h - 1).to(torch.int64)
-    y_floor = torch.floor(y).to(torch.int64)
-    y_ceil = torch.ceil(y).clamp(max=in_w - 1).to(torch.int64)
+    x_floor = x.to(torch.int64).clamp(max=in_h - 1)
+    y_floor = y.to(torch.int64).clamp(max=in_w - 1)
+    x_ceil = (x_floor + 1).clamp(max=in_h - 1)
+    y_ceil = (y_floor + 1).clamp(max=in_w - 1)
 
     x_view = x.unsqueeze(1)
     x_floor_view = x_floor.unsqueeze(1)
