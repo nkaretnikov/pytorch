@@ -72,8 +72,7 @@ def unique(it):
     return {id(x): x for x in it}.values()
 
 
-def ceildiv(numer: int, denom: int):
-    assert isinstance(numer, int) and isinstance(denom, int)
+def ceildiv(numer, denom):
     return -(numer // -denom)
 
 

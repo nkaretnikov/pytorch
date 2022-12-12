@@ -1314,8 +1314,14 @@ def arange(
     if isinstance(step, float) and int(step) == step:
         step = int(step)
 
+    def any_arg(typ):
+        args = (start, end, step)
+        return any(isinstance(x, typ) for x in args)
+
     # Triton kernel doesn't support float arange yet, fallback to aten.arange
-    if not (isinstance(start, int) and isinstance(end, int) and isinstance(step, int)):
+    if any_arg(float) and any_arg(sympy.Expr):
+        raise NotImplementedError("Fallback with float and sympy.Expr")
+    elif any_arg(float):
         return fallback_arange(
             start,
             end,
@@ -1328,14 +1334,15 @@ def arange(
 
     dtype = dtype or torch.int64
     length = ceildiv((end - start), step)
-    start = sympy.Integer(start)
-    step = sympy.Integer(step)
+    start = start if isinstance(start, sympy.Expr) else sympy.Integer(start)
+    step = step if isinstance(step, sympy.Expr) else sympy.Integer(step)
+    ranges = [length if isinstance(length, sympy.Expr) else sympy.Integer(length)]
 
     return Pointwise.create(
         device=decode_device(device),
         dtype=dtype,
         inner_fn=lambda index: ops.index_expr(step * index[0] + start, dtype),
-        ranges=[sympy.Integer(length)],
+        ranges=ranges,
     )
 
 
